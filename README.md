@@ -32,8 +32,8 @@ the others.
 2. Extract content of the zipfile
 3. cd to root directory
 4. Modify the conf.ig file by setting download location and setting the ready_to_download flag = 1
-5. set permission to execute get_dataset.sh with sudo chmod+x ./get_dataset.sh
-6. set permission to execute get_get_testset.sh with sudo chomod+x ./get_testet.sh
+5. set permission to execute get_dataset.sh with sudo chmod +x ./get_dataset.sh
+6. set permission to execute get_get_testset.sh with sudo chomod +x ./get_testet.sh
 7. Run ./get_dataset.sh
 8. Run ./get_testset.sh
 
