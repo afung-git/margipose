@@ -87,19 +87,19 @@ Train without pixel-wise loss term:
 Evaluate a model's test set performance using the second GPU:
 
 ```bash
-./run.sh margipose --device=cuda:1 eval --model margipose-mpi3d.pth --dataset mpi3d-test
+./margipose/eval_3d --model margipose-mpi3d.pth --dataset mpi3d-test
 ```
 
 Explore qualitative results with a GUI:
 
 ```bash
-./run.sh margipose gui --model margipose-mpi3d.pth --dataset mpi3d-test
+./margipose/run_gui.py --model margipose-mpi3d.pth --dataset mpi3d-test
 ```
 
 Run the project unit tests:
 
 ```bash
-./run.sh pytest
+./setup.py pytest
 ```
 
 ## Pretrained models
