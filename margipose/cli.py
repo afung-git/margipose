@@ -9,7 +9,7 @@ def create_common_arg_parser():
     parser = argparse.ArgumentParser(prog='margipose',
                                      formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     parser.add_argument('--device', help='primary computation device, eg "cpu" or "cuda:0"',
-                        default='cuda:0')
+                        default='cpu')
     return parser
 
 

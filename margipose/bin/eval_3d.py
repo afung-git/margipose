@@ -57,16 +57,18 @@ def obtain_predictions(model, device, loader, known_depth=False, print_progress=
 
     for batch in iterable:
         in_var = batch['input'].to(device, torch.float32)
+        # print(in_var)
         target_var = batch['target'].to(device, torch.float32)
 
         # Calculate predictions and loss
         start_time = perf_counter()
         out_var = model(in_var)
+        # print(out_var)
         inference_time = perf_counter() - start_time
         loss = average_loss(model.forward_3d_losses(out_var, target_var.narrow(-1, 0, 3)))
 
         norm_preds = ensure_homogeneous(out_var.to(CPU, torch.float64), d=3)
-
+        print(norm_preds)
         actuals = []
         expected = None
         for i, norm_pred in enumerate(norm_preds):

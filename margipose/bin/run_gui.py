@@ -386,7 +386,9 @@ def main(argv, common_opts):
     device = common_opts['device']
 
     if args.model:
-        model = load_model(args.model).to(device).eval()
+        # model = load_model(args.model).to(device).eval()
+        model = load_model(args.model).eval()
+
         data_specs = model.data_specs
     else:
         model = None

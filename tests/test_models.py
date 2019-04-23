@@ -21,10 +21,11 @@ def test_columns():
 def test_margipose():
     with torch.no_grad():
         in_var = torch.randn(1, 3, 256, 256)
+        # print(in_var[0])
         model = MargiPoseModel(CanonicalSkeletonDesc, n_stages=4, axis_permutation=True,
                                feature_extractor='inceptionv4', pixelwise_loss='jsd')
         out_var = model(in_var)
-    # print(out_var)
+    print(out_var)
     assert model.xy_heatmaps[-1].size() == torch.Size([1, 17, 32, 32])
     assert out_var.size() == torch.Size([1, 17, 3])
 
@@ -48,5 +49,5 @@ def test_heatmaps_to_coords():
     print(xyz)
     assert_allclose(xyz, torch.Tensor([[[-0.5, 0.5, 0.15]]]))
 
-test_margipose()
+# test_margipose()
 test_heatmaps_to_coords()
