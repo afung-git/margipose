@@ -102,6 +102,9 @@ Run the project unit tests:
 ./setup.py pytest
 ```
 
+## Making Inference On Single Image
+use modified.py script
+
 ## Pretrained models
 
 Pretrained models are available for download:

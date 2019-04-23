@@ -1,7 +1,6 @@
 # This is a custom scripted modified to output the inference of an individual image
 
 import torch
-import cv2
 import numpy as np
 from PIL import Image
 import pandas as pd
@@ -33,18 +32,25 @@ with torch.no_grad():
 
 
     out_var = model(tr_img)
-assert model.xy_heatmaps[-1].size() == torch.Size([1, 17, 32, 32])
-assert out_var.size() == torch.Size([1, 17, 3])
+# assert model.xy_heatmaps[-1].size() == torch.Size([1, 17, 32, 32])
+# assert out_var.size() == torch.Size([1, 17, 3])
 
-pred_skel_norm = ensure_homogeneous(out_var.squeeze(0).to(CPU, torch.float64), d=3)
-print(pred_skel_norm)
+pred_skel_norm = ensure_homogeneous(out_var.to(CPU, torch.float64), d=3)
+# print(pred_skel_norm)
 
+# print(pred_skel_norm.numpy())
+# coords = pred_skel_norm.numpy()
+coords = np.squeeze(pred_skel_norm.numpy(), axis=0)
+coords = np.rint((1+coords)*(255-0)/2)[:,:3]
+coords_2d = coords[:,:2].astype(int)
+# print(coords_2d)
 
+blank = np.zeros((256,256))
 
-# pred_skel_norm = ensure_homogeneous(out_var.squeeze(0).to(CPU, torch.float64), d=3)
-#     pred_skel_denorm = dataset.denormalise_with_skeleton_height(
-#         pred_skel_norm, example['camera'], example['transform_opts'])
-#     pred_skel_image_space = example['camera'].project_cartesian(pred_skel_denorm)
-#     pred_skel_camera_space = dataset.untransform_skeleton(pred_skel_denorm, example['transform_opts'])
-
-
+for y,x in coords_2d:
+    # print(x,y)
+    blank[x,y] = 255.0
+print(blank)
+# convert array to Image
+img = Image.fromarray(blank)
+img.show()
