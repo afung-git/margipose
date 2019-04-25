@@ -99,7 +99,7 @@ Explore qualitative results with a GUI:
 Single Image Inference:
 
 ```bash
-./margipose/bin/infer_single.py --model pretrained/margipose-mpi3d.pth --image 000002.jpg
+./infer.py --model pretrained/margipose-mpi3d.pth --mode i --path inputs/000001.jpg
 ```
 
 Run the project unit tests:
