@@ -96,6 +96,12 @@ Explore qualitative results with a GUI:
 ./margipose/bin/run_gui.py --model pretrained/margipose-mpi3d.pth --dataset mpi3d-test
 ```
 
+Single Image Inference:
+
+```bash
+./margipose/bin/infer_single.py --model pretrained/margipose-mpi3d.pth --image 000002.jpg
+```
+
 Run the project unit tests:
 
 ```bash

@@ -23,7 +23,7 @@ model = load_model('./pretrained/margipose-mpi3d.pth')
 model.eval()
 
 with torch.no_grad():
-    img = Image.open('./img_000001.jpg')
+    img = Image.open('./000002.jpg')
     # img = img.load()
 
     tr_img = ImageSpecs(256).convert(img)
@@ -36,7 +36,7 @@ with torch.no_grad():
 # assert out_var.size() == torch.Size([1, 17, 3])
 
 pred_skel_norm = ensure_homogeneous(out_var.to(CPU, torch.float64), d=3)
-# print(pred_skel_norm)
+print(pred_skel_norm)
 
 # print(pred_skel_norm.numpy())
 # coords = pred_skel_norm.numpy()
@@ -50,7 +50,7 @@ blank = np.zeros((256,256))
 for y,x in coords_2d:
     # print(x,y)
     blank[x,y] = 255.0
-print(blank)
+# print(blank)
 # convert array to Image
-img = Image.fromarray(blank)
-img.show()
+# img = Image.fromarray(blank)
+# img.show()
