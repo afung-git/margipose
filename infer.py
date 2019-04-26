@@ -42,24 +42,15 @@ def parse_args():
     parser.add_argument('--path', type=str, metavar='DIR', default=argparse.SUPPRESS,
                         required=True,
                         help='directory of files to infer pose from')
-
-
     return parser.parse_args()
 
 
-def infer_single(model, img):
-    # print(os.path.basename(img))
-    filename = os.path.basename(img)
-    filename_noext = os.path.splitext(filename)[0]
-    # print(filename_noext)
-
-
+def infer_joints(model, img):
     #Obtains input spec from model and resizes the image
     input_specs: ImageSpecs = model.data_specs.input_specs
     image: PIL.Image.Image = PIL.Image.open(img, 'r')
     image.thumbnail((input_specs.width, input_specs.height))
     input_image = input_specs.convert(image).to(CPU, torch.float32)
-
 
     # Make inference
     output = model(input_image[None, ...])[0]
@@ -68,74 +59,80 @@ def infer_single(model, img):
     norm_skel3d = ensure_cartesian(output.to(CPU, torch.float64), d=3)
     coords = norm_skel3d.numpy()
     coords = np.rint((1+coords)*(255-0)/2)[:,:3]
-    coords_2d = coords[:,:2].astype(int)
+    coords = coords.astype(int)
+    # print(coords_2d)
     img = input_specs.unconvert(input_image.to(CPU))
-    img_2d = draw_joints_on_image(img, coords_2d)
     # print(norm_skel3d)
     
-    # create visualization
+    # create visualization of normalized skeleton
     fig = plt.figure(1)
     plt_3d: Axes3D = fig.add_subplot(1, 1, 1, projection='3d')
     plot_skeleton_on_axes3d(norm_skel3d, CanonicalSkeletonDesc, plt_3d, invert=True)
     # plt.show()
 
-    # superimpose joints on input image
-    
     #saving all outputs as image files with corresponding filename
-    extent = plt_3d.get_window_extent().transformed(fig.dpi_scale_trans.inverted())
-    fig.savefig('./outputs/3d/' + filename, bbox_inches=extent) 
-    img_2d.save('./outputs/' + filename)
+    fig.canvas.draw()
+    fig_img = np.array(fig.canvas.renderer._renderer, np.uint8)
 
-    # create JSON file with all the joints saved
-    joint_dic = {
-        "head_top" : (coords_2d[0][0], coords_2d[0][1]),
-        "neck" : (coords_2d[1][0], coords_2d[1][1]),
-        "r_shoulder" : (coords_2d[2][0], coords_2d[2][1]),
-        "r_elbow" : (coords_2d[3][0], coords_2d[3][1]),
-        "r_wrist" : (coords_2d[4][0], coords_2d[4][1]),
-        "l_shoulder" : (coords_2d[5][0], coords_2d[5][1]),
-        "l_elbow" : (coords_2d[6][0], coords_2d[6][1]),
-        "l_wrist" : (coords_2d[7][0], coords_2d[7][1]),
-        "r_hip" : (coords_2d[8][0], coords_2d[8][1]),
-        "r_knee" : (coords_2d[9][0], coords_2d[9][1]),
-        "r_ankle" : (coords_2d[10][0], coords_2d[10][1]),
-        "l_hip" : (coords_2d[11][0], coords_2d[11][1]),
-        "l_knee" : (coords_2d[12][0], coords_2d[12][1]),
-        "l_ankle" : (coords_2d[13][0], coords_2d[13][1]),
-        "pelvis" : (coords_2d[14][0], coords_2d[14][1]),
-        "spine" : (coords_2d[15][0], coords_2d[15][1]),
-        "head" : (coords_2d[16][0], coords_2d[16][1]),
-    }
+    return (coords, img, fig_img)
 
-    return joint_dic
-
-
-def infer_dir():
-    return 1
 
 def main():
 
     args = parse_args()
     if (args.mode == 'I' or args.mode == 'i'):
+        filename = os.path.basename(args.path)
+        filename_noext = os.path.splitext(filename)[0]
         model = load_model(args.model).to(CPU).eval()
-        joints_loc = infer_single(model, args.path)
-    with open('data.json', 'w') as fp:
-        json.dump(joints_loc, fp)
-    # if(args.mode =='D' or args.mode == 'd'):
-    #     infer_dir(args.path)
+        coords, img_input, img_skele3d = infer_joints(model, args.path)
+        # print(img_skele3d)
+
+        img_skele3d = PIL.Image.fromarray(img_skele3d)
+        image_joints = draw_joints_on_image(img_input, coords)
+        joints_loc = output_to_JSON(coords[:,:2], filename_noext)
+        # img_skele3d.show()
+        
+        img_skele3d.save('./outputs/3d/' + filename_noext + '.png')
+        image_joints.save('./outputs/' + filename)
+        with open('./outputs/joint_loc.json', 'w') as fp:
+            json.dump(joints_loc, fp, indent=4)
+    if(args.mode =='D' or args.mode == 'd'):
+        files = os.listdir(args.path)
+        print(files)
 
 
-    
 
-def draw_joints_on_image(img, coords_2d):
-    for x,y in coords_2d:
+def draw_joints_on_image(img, coords):
+    for x,y in coords[:,:2]:
         r = 3
         draw = PIL.ImageDraw.Draw(img)
         draw.ellipse((x-r, y-r, x+r, y+r), fill='yellow', outline='orange')
     return img
 
-def output_to_JSON():
-    return 1
+def output_to_JSON(coords_2d, filename):
+    # create JSON file with all the joints saved
+    joints_loc = {
+        filename: {
+            "head_top":{"x":int(coords_2d[0][0]), "y": int(coords_2d[0][1])},
+            "neck": {"x":int(coords_2d[1][0]), "y": int(coords_2d[1][1])},
+            "r_shoulder" : {"x":int(coords_2d[2][0]), "y": int(coords_2d[2][1])},
+            "r_elbow" : {"x":int(coords_2d[3][0]), "y": int(coords_2d[3][1])},
+            "r_wrist" : {"x":int(coords_2d[4][0]), "y": int(coords_2d[4][1])},
+            "l_shoulder" : {"x":int(coords_2d[5][0]), "y": int(coords_2d[5][1])},
+            "l_elbow" : {"x":int(coords_2d[6][0]), "y": int(coords_2d[6][1])},
+            "l_wrist" : {"x":int(coords_2d[7][0]), "y": int(coords_2d[7][1])},
+            "r_hip" : {"x":int(coords_2d[8][0]), "y": int(coords_2d[8][1])},
+            "r_knee" : {"x":int(coords_2d[9][0]), "y": int(coords_2d[9][1])},
+            "r_ankle" : {"x":int(coords_2d[10][0]), "y": int(coords_2d[10][1])},
+            "l_hip" : {"x":int(coords_2d[11][0]), "y": int(coords_2d[11][1])},
+            "l_knee" : {"x":int(coords_2d[12][0]), "y": int(coords_2d[12][1])},
+            "l_ankle" : {"x":int(coords_2d[13][0]), "y": int(coords_2d[13][1])},
+            "pelvis" : {"x":int(coords_2d[14][0]), "y": int(coords_2d[14][1])},
+            "spine" : {"x":int(coords_2d[15][0]), "y": int(coords_2d[15][1])},
+            "head" : {"x":int(coords_2d[16][0]), "y": int(coords_2d[16][1])},
+        }
+    }
+    return joints_loc
 
 if __name__ == '__main__':
     main()
