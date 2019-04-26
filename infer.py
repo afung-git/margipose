@@ -1,5 +1,3 @@
-#!/usr/bin/env python3
-
 """Perform 3D pose inference on a single image or directory.
 The image is assumed to be centred on a human subject and scaled appropriately.
 3D skeleton output is only a normalized skeleton

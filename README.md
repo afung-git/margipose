@@ -113,9 +113,6 @@ Run the project unit tests:
 ./setup.py pytest
 ```
 
-## Making Inference On Single Image
-use modified.py script
-
 ## Pretrained models
 
 Pretrained models are available for download:
@@ -125,6 +122,7 @@ Pretrained models are available for download:
 * [margipose-h36m.pth](https://cloudstor.aarnet.edu.au/plus/s/RisOjU8YwqUXFI7) [221.6 MB]
   * Trained on Human3.6M and MPII examples
 
+Once downloaded place them in the /pretrained directory
 ## License and citation
 
 (C) 2018 Aiden Nibali
