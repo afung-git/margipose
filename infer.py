@@ -1,9 +1,12 @@
+#!/usr/bin/env python3
+
 """Perform 3D pose inference on a single image or directory.
 The image is assumed to be centred on a human subject and scaled appropriately.
 3D skeleton output is only a normalized skeleton
 """
 
 import argparse
+import time
 import sys
 import os
 import PIL.Image
@@ -34,12 +37,12 @@ def parse_args():
     parser.add_argument('--model', type=str, metavar='FILE', default=argparse.SUPPRESS,
                         required=True,
                         help='path to model file')
-    parser.add_argument('--mode', type=str, required=True, choices = ['I', 'D', 'd', 'i'],
+    parser.add_argument('--mode', type=str, required=True, choices = ['I', 'D', 'd', 'i', 'v', 'V'],
                         help='infer single image or directory')
 
     parser.add_argument('--path', type=str, metavar='DIR', default=argparse.SUPPRESS,
                         required=True,
-                        help='directory of files to infer pose from')
+                        help='directory or files to infer pose from')
     return parser.parse_args()
 
 
@@ -83,7 +86,14 @@ def main():
         filename_noext = os.path.splitext(filename)[0]
         model = load_model(args.model).to(CPU).eval()
         coords, img_input, img_skele3d = infer_joints(model, args.path)
-        # print(img_skele3d)
+        # print(img_skeimg_inputle3d)
+
+        # fig = plt.figure(figsize=(32, 8))
+        # ax1 = fig.add_subplot(1, 3, 1)
+        # ax2 = fig.add_subplot(1, 3, 2)
+        # ax3 = fig.add_subplot(1, 3, 3)
+
+        # ax1.imshow(img_input)
 
         img_skele3d = PIL.Image.fromarray(img_skele3d)
         image_joints = draw_joints_on_image(img_input, coords)
@@ -94,15 +104,44 @@ def main():
         image_joints.save('./outputs/' + filename)
         with open('./outputs/joint_loc.json', 'w') as fp:
             json.dump(joints_loc, fp, indent=4)
+
+        # ax2.imshow(img_skele3d)
+        # ax3.imshow(image_joints)
+        # plt.show()
+
     if(args.mode =='D' or args.mode == 'd'):
         files = os.listdir(args.path)
-        print(files)
+        # print(files)
+        start = time.time()
+        model = load_model(args.model).to(CPU).eval()
+        end = time.time()
+        print(end-start, "To load Model")
+        count = 0
+        joints_loc_list = []
+        for image in files:
+            start = time.time()
+            filename_noext = os.path.splitext(image)[0]
+            coords, img_input, img_skele3d = infer_joints(model, args.path+image)
+            print(filename_noext)
+            img_skele3d = PIL.Image.fromarray(img_skele3d)
+            image_joints = draw_joints_on_image(img_input, coords)
+            joints_loc = output_to_JSON(coords[:,:2], filename_noext)        
+            img_skele3d.save('./outputs/3d/' + filename_noext + '.png')
+            image_joints.save('./outputs/' + image)
+            joints_loc_list.append(joints_loc)
+            count += 1
+            end = time.time()
+            print(end-start, "(s)", "completed " + str(count) + "/" + str(len(files)))
+        with open('./outputs/joint_loc_dir.json', 'w') as fp:
+            json.dump(joints_loc_list, fp, indent=4)
+
+    if(args.mode =='V' or args.mode == 'v'):
 
 
 
 def draw_joints_on_image(img, coords):
     for x,y in coords[:,:2]:
-        r = 3
+        r = 2
         draw = PIL.ImageDraw.Draw(img)
         draw.ellipse((x-r, y-r, x+r, y+r), fill='yellow', outline='orange')
     return img
