@@ -16,6 +16,7 @@ import json
 import torch
 from mpl_toolkits.mplot3d import Axes3D
 from pose3d_utils.coords import ensure_cartesian
+from MayaExporter import MayaExporter
 
 from margipose.cli import Subcommand
 from margipose.data.skeleton import CanonicalSkeletonDesc
@@ -59,8 +60,9 @@ def infer_joints(model, img):
     # Create location of normalized skeleton
     norm_skel3d = ensure_cartesian(output.to(CPU, torch.float64), d=3)
     coords = norm_skel3d.numpy()
-    coords = np.rint((1+coords)*(255-0)/2)[:,:3]
-    coords = coords.astype(int)
+    coords_raw = coords;
+    coords_img = np.rint((1+coords)*(255-0)/2)[:,:3]
+    coords_img = coords_img.astype(int)
     # print(coords_2d)
     img = input_specs.unconvert(input_image.to(CPU))
     # print(norm_skel3d)
@@ -75,7 +77,7 @@ def infer_joints(model, img):
     fig.canvas.draw()
     fig_img = np.array(fig.canvas.renderer._renderer, np.uint8)
 
-    return (coords, img, fig_img)
+    return (coords_img, coords_raw, img, fig_img)
 
 
 def main():
@@ -85,7 +87,7 @@ def main():
         filename = os.path.basename(args.path)
         filename_noext = os.path.splitext(filename)[0]
         model = load_model(args.model).to(CPU).eval()
-        coords, img_input, img_skele3d = infer_joints(model, args.path)
+        coords_img, coords_raw, img_input, img_skele3d = infer_joints(model, args.path)
         # print(img_skeimg_inputle3d)
 
         # fig = plt.figure(figsize=(32, 8))
@@ -96,14 +98,15 @@ def main():
         # ax1.imshow(img_input)
 
         img_skele3d = PIL.Image.fromarray(img_skele3d)
-        image_joints = draw_joints_on_image(img_input, coords)
-        joints_loc = output_to_JSON(coords[:,:2], filename_noext)
+        image_joints = draw_joints_on_image(img_input, coords_img)
+        joints_loc = output_to_JSON(coords_raw, filename_noext)
         # img_skele3d.show()
         
         img_skele3d.save('./outputs/3d/' + filename_noext + '.png')
         image_joints.save('./outputs/' + filename)
-        with open('./outputs/joint_loc.json', 'w') as fp:
-            json.dump(joints_loc, fp, indent=4)
+        #with open('./outputs/joint_loc.json', 'w') as fp:
+        #    json.dump(joints_loc, fp, indent=4)
+        MayaExporter.WriteToMayaAscii('./outputs/3d/' + filename_noext + '.ma', joints_loc)
 
         # ax2.imshow(img_skele3d)
         # ax3.imshow(image_joints)
@@ -136,7 +139,8 @@ def main():
             json.dump(joints_loc_list, fp, indent=4)
 
     if(args.mode =='V' or args.mode == 'v'):
-
+        # don't do anyth9ing
+        print('Unsupported')
 
 
 def draw_joints_on_image(img, coords):
@@ -146,29 +150,66 @@ def draw_joints_on_image(img, coords):
         draw.ellipse((x-r, y-r, x+r, y+r), fill='yellow', outline='orange')
     return img
 
-def output_to_JSON(coords_2d, filename):
+def output_to_JSON(coords, filename):
     # create JSON file with all the joints saved
+
+    coords = coords*100;
     joints_loc = {
-        filename: {
-            "head_top":{"x":int(coords_2d[0][0]), "y": int(coords_2d[0][1])},
-            "neck": {"x":int(coords_2d[1][0]), "y": int(coords_2d[1][1])},
-            "r_shoulder" : {"x":int(coords_2d[2][0]), "y": int(coords_2d[2][1])},
-            "r_elbow" : {"x":int(coords_2d[3][0]), "y": int(coords_2d[3][1])},
-            "r_wrist" : {"x":int(coords_2d[4][0]), "y": int(coords_2d[4][1])},
-            "l_shoulder" : {"x":int(coords_2d[5][0]), "y": int(coords_2d[5][1])},
-            "l_elbow" : {"x":int(coords_2d[6][0]), "y": int(coords_2d[6][1])},
-            "l_wrist" : {"x":int(coords_2d[7][0]), "y": int(coords_2d[7][1])},
-            "r_hip" : {"x":int(coords_2d[8][0]), "y": int(coords_2d[8][1])},
-            "r_knee" : {"x":int(coords_2d[9][0]), "y": int(coords_2d[9][1])},
-            "r_ankle" : {"x":int(coords_2d[10][0]), "y": int(coords_2d[10][1])},
-            "l_hip" : {"x":int(coords_2d[11][0]), "y": int(coords_2d[11][1])},
-            "l_knee" : {"x":int(coords_2d[12][0]), "y": int(coords_2d[12][1])},
-            "l_ankle" : {"x":int(coords_2d[13][0]), "y": int(coords_2d[13][1])},
-            "pelvis" : {"x":int(coords_2d[14][0]), "y": int(coords_2d[14][1])},
-            "spine" : {"x":int(coords_2d[15][0]), "y": int(coords_2d[15][1])},
-            "head" : {"x":int(coords_2d[16][0]), "y": int(coords_2d[16][1])},
+        str("root_" + filename): {
+            "pelvis" : {
+                "t": coords[14],
+                        "r_hip" : {
+                            "t": coords[8],
+                            "r_knee" : {
+                                "t": coords[9],
+                                "r_ankle" : {
+                                    "t":coords[10],
+                                    },
+                                },
+                            },
+                        "l_hip" : {
+                            "t": coords[11],
+                            "l_knee" : {
+                                "t": coords[12],
+                                "l_ankle" : {
+                                    "t": coords[13],
+                                    },
+                                },
+                            },
+                "spine" : {
+                    "t": coords[15],
+                    "neck": {
+                        "t": coords[1],
+                        "head" : {
+                            "t": coords[16],
+                            "head_top":{
+                                "t": coords[0],
+                                },
+                            },
+                        "r_shoulder" : {
+                            "t": coords[2],
+                            "r_elbow" : {
+                                "t": coords[3],
+                                "r_wrist" : {
+                                    "t": coords[4],
+                                    },
+                                },
+                            },
+                        "l_shoulder" : {
+                            "t": coords[5],
+                            "l_elbow" : {
+                                "t": coords[6],
+                                "l_wrist" : {
+                                    "t": coords[7],
+                                    },
+                                },
+                            },
+                        },
+                    },
+                },
+            },
         }
-    }
+
     return joints_loc
 
 if __name__ == '__main__':
