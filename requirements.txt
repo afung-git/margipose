@@ -22,3 +22,4 @@ git+https://github.com/anibali/pose3d-utils@cd6185f274e5ba5fc53d5d47b99e432a2261
 git+https://github.com/anibali/torchdata.git@d52d0c8b9307389eadfba643ec1bb0ef77bc210e#egg=torchdata
 pytest==3.8.2
 pylint
+opencv-python==4.1.0.25

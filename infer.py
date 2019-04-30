@@ -17,6 +17,7 @@ import torch
 from mpl_toolkits.mplot3d import Axes3D
 from pose3d_utils.coords import ensure_cartesian
 from MayaExporter import MayaExporter
+from VideoFrames import VideoFrames
 
 from margipose.cli import Subcommand
 from margipose.data.skeleton import CanonicalSkeletonDesc
@@ -51,6 +52,12 @@ def infer_joints(model, img):
     #Obtains input spec from model and resizes the image
     input_specs: ImageSpecs = model.data_specs.input_specs
     image: PIL.Image.Image = PIL.Image.open(img, 'r')
+
+    if image.width != image.height:
+        cropSize = min(image.width, image.height)
+        image = image.crop((image.width/2 - cropSize/2, image.height/2 - cropSize/2,
+                    image.width/2 + cropSize/2, image.height/2 + cropSize/2))
+
     image.thumbnail((input_specs.width, input_specs.height))
     input_image = input_specs.convert(image).to(CPU, torch.float32)
 
@@ -60,7 +67,7 @@ def infer_joints(model, img):
     # Create location of normalized skeleton
     norm_skel3d = ensure_cartesian(output.to(CPU, torch.float64), d=3)
     coords = norm_skel3d.numpy()
-    coords_raw = coords;
+    coords_raw = coords
     coords_img = np.rint((1+coords)*(255-0)/2)[:,:3]
     coords_img = coords_img.astype(int)
     # print(coords_2d)
@@ -139,9 +146,50 @@ def main():
             json.dump(joints_loc_list, fp, indent=4)
 
     if(args.mode =='V' or args.mode == 'v'):
-        # don't do anyth9ing
-        print('Unsupported')
+        outputPath = './inputs/tempFrames/'
+        fps = VideoFrames.ExtractFrames(args.path, outputPath)
+        files = os.listdir('./inputs/tempFrames/')
+        # print(len(files))
+        start = time.time()
+        model = load_model(args.model).to(CPU).eval()
+        end = time.time()
+        print(end-start, "To load Model")
+        joints_loc_list = []
+        count = 0
+        for image in files:
+            # print(frame)
+            start = time.time()
+            filename_noext = os.path.splitext(image)[0]
+            coords_img, coords_raw, img_input, img_skele3d = infer_joints(model, './inputs/tempFrames/'+image)
+            # print(filename_noext)
+            img_skele3d = PIL.Image.fromarray(img_skele3d)
+            image_joints = draw_joints_on_image(img_input, coords_img)
+            joints_loc = output_to_JSON(coords_raw, filename_noext)        
+            img_skele3d.save('./outputs/3d/fromVids/' + filename_noext + '.png')
+            image_joints.save('./outputs/vids/' + image)
+            joints_loc_list.append(joints_loc)
+            count += 1
+            end = time.time()
+            print(end-start, "(s)", "frames completed " + str(count) + "/" + str(len(files)))
+        # with open('./outputs/joint_loc_dir.json', 'w') as fp:
+        #     json.dump(joints_loc_list, fp, indent=4)
+        print('Completed')
+        # os.path.splitext(filename)[0]
+        VideoFrames.FrametoVid('./outputs/vids/', os.path.splitext(os.path.basename(args.path))[0], fps)
+        # VideoFrames.FrametoVid('./outputs/3d/fromVids', os.path.splitext(os.path.basename(args.path))[0], fps)
 
+        # delete all temp files
+        filelist = os.listdir('./inputs/tempFrames/')
+        for f in filelist:
+            os.remove(os.path.join('./inputs/tempFrames/', f))
+        
+        filelist = os.listdir('./outputs/vids/')
+        for f in filelist:
+            os.remove(os.path.join('./outputs/vids/', f))
+
+        filelist = os.listdir('./outputs/3d/fromVids/')
+        for f in filelist:
+            os.remove(os.path.join('./outputs/3d/fromVids/', f))
 
 def draw_joints_on_image(img, coords):
     for x,y in coords[:,:2]:
@@ -153,7 +201,7 @@ def draw_joints_on_image(img, coords):
 def output_to_JSON(coords, filename):
     # create JSON file with all the joints saved
 
-    coords = coords*100;
+    coords = coords*100
     joints_loc = {
         str("root_" + filename): {
             "pelvis" : {
