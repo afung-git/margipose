@@ -106,7 +106,7 @@ def main():
         # ax1.imshow(img_input)
 
         img_skele3d = PIL.Image.fromarray(img_skele3d)
-        draw_joints_on_image(img_input, coords_img[:,:2])
+        draw_skele_on_image(img_input, coords_img[:,:2])
         joints_loc = output_to_JSON(coords_raw, filename_noext)
         # img_skele3d.show()
         
@@ -135,7 +135,7 @@ def main():
             coords, img_input, img_skele3d = infer_joints(model, args.path+image)
             print(filename_noext)
             img_skele3d = PIL.Image.fromarray(img_skele3d)
-            draw_joints_on_image(img_input, coords)
+            draw_skele_on_image(img_input, coords)
             joints_loc = output_to_JSON(coords[:,:2], filename_noext)        
             img_skele3d.save('./outputs/3d/' + filename_noext + '.png')
             img_input.save('./outputs/' + image)
@@ -148,52 +148,58 @@ def main():
         MayaExporter.WriteToMayaAscii('./outputs/3d/' + filename_noext + '.ma', joints_loc)
 
     if(args.mode =='V' or args.mode == 'v'):
-        outputPath = './inputs/tempFrames/'
-        fps = VideoFrames.ExtractFrames(args.path, outputPath)
-        files = os.listdir('./inputs/tempFrames/')
+        # outputPath = './inputs/tempFrames/'
+        # fps = VideoFrames.ExtractFrames(args.path, outputPath)
+        # files = os.listdir('./inputs/tempFrames/')
         # print(len(files))
-        start = time.time()
-        model = load_model(args.model).to(CPU).eval()
-        end = time.time()
-        print(end-start, "To load Model")
-        joints_loc_list = []
-        count = 0
-        for image in files:
-            # print(frame)
-            start = time.time()
-            filename_noext = os.path.splitext(image)[0]
-            coords_img, coords_raw, img_input, img_skele3d = infer_joints(model, './inputs/tempFrames/'+image)
-            # print(filename_noext)
-            img_skele3d = PIL.Image.fromarray(img_skele3d)
-            draw_joints_on_image(img_input, coords_img[:,:2])
-            joints_loc = output_to_JSON(coords_raw, filename_noext)        
-            img_skele3d.save('./outputs/3d/fromVids/' + filename_noext + '.png')
-            img_input.save('./outputs/vids/' + image)
-            joints_loc_list.append(joints_loc)
-            count += 1
-            end = time.time()
-            print(end-start, "(s)", "frames completed " + str(count) + "/" + str(len(files)))
-        # with open('./outputs/joint_loc_dir.json', 'w') as fp:
-        #     json.dump(joints_loc_list, fp, indent=4)
-        print('Completed')
-        # os.path.splitext(filename)[0]
-        VideoFrames.FrametoVid('./outputs/vids/', os.path.splitext(os.path.basename(args.path))[0], fps)
-        # VideoFrames.FrametoVid('./outputs/3d/fromVids', os.path.splitext(os.path.basename(args.path))[0], fps)
+        # start = time.time()
+        # model = load_model(args.model).to(CPU).eval()
+        # end = time.time()
+        # print(end-start, "To load Model")
 
-        # delete all temp files
-        filelist = os.listdir('./inputs/tempFrames/')
-        for f in filelist:
-            os.remove(os.path.join('./inputs/tempFrames/', f))
+        # AllinOneVideo
+        VideoFrames.AllinOne(args.path, args.model)
+        # VideoFrames.AllinOne(args.path, ar)
+
+
+        # joints_loc_list = []
+        # count = 0
+        # for image in files:
+        #     # print(frame)
+        #     start = time.time()
+        #     filename_noext = os.path.splitext(image)[0]
+        #     coords_img, coords_raw, img_input, img_skele3d = infer_joints(model, './inputs/tempFrames/'+image)
+        #     # print(filename_noext)
+        #     img_skele3d = PIL.Image.fromarray(img_skele3d)
+        #     draw_skele_on_image(img_input, coords_img[:,:2])
+        #     joints_loc = output_to_JSON(coords_raw, filename_noext)        
+        #     img_skele3d.save('./outputs/3d/fromVids/' + filename_noext + '.png')
+        #     img_input.save('./outputs/vids/' + image)
+        #     joints_loc_list.append(joints_loc)
+        #     count += 1
+        #     end = time.time()
+        #     print(end-start, "(s)", "frames completed " + str(count) + "/" + str(len(files)))
+        # # with open('./outputs/joint_loc_dir.json', 'w') as fp:
+        # #     json.dump(joints_loc_list, fp, indent=4)
+        # print('Completed')
+        # # os.path.splitext(filename)[0]
+        # VideoFrames.FrametoVid('./outputs/vids/', os.path.splitext(os.path.basename(args.path))[0], fps)
+        # # VideoFrames.FrametoVid('./outputs/3d/fromVids', os.path.splitext(os.path.basename(args.path))[0], fps)
+
+        # # delete all temp files
+        # filelist = os.listdir('./inputs/tempFrames/')
+        # for f in filelist:
+        #     os.remove(os.path.join('./inputs/tempFrames/', f))
         
-        filelist = os.listdir('./outputs/vids/')
-        for f in filelist:
-            os.remove(os.path.join('./outputs/vids/', f))
+        # filelist = os.listdir('./outputs/vids/')
+        # for f in filelist:
+        #     os.remove(os.path.join('./outputs/vids/', f))
 
-        filelist = os.listdir('./outputs/3d/fromVids/')
-        for f in filelist:
-            os.remove(os.path.join('./outputs/3d/fromVids/', f))
+        # filelist = os.listdir('./outputs/3d/fromVids/')
+        # for f in filelist:
+        #     os.remove(os.path.join('./outputs/3d/fromVids/', f))
 
-def draw_joints_on_image(img, coords):
+def draw_skele_on_image(img, coords):
     # print(coords.shape[0])
     r = 2
     linewidth = 2
