@@ -7,7 +7,9 @@ class VideoFrames:
     def ExtractFrames(videoLoc, saveDir):
         vid = cv2.VideoCapture(videoLoc)
         fps = vid.get(cv2.CAP_PROP_FPS)
+        frame_count = vid.get(cv2.CAP_PROP_FRAME_COUNT)
         print(fps, "fps")
+        print(frame_count, "frames")
         # print(vid)
         count = 0
         # print(vid.isOpened())
@@ -16,8 +18,10 @@ class VideoFrames:
             if ret == False:
                 print("goes here")
                 break
-            # if count == 21: # for troubleshooting
-            #     break
+            if count == 5: # for troubleshooting
+                break
+            print(frame.shape)
+            # print(type(frame))
             cv2.imwrite(saveDir + str(count) + '.jpg', frame)
             count +=1
         vid.release()

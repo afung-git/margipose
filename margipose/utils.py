@@ -168,6 +168,8 @@ def plot_skeleton_on_axes3d(skel, skel_desc, ax: Axes3D, invert=True, alpha=1.0)
 
     ax.scatter(xs, ys, zs, color='grey', alpha=alpha)
 
+    
+
 
 def plot_skeleton_on_axes(skel, skel_desc, ax, alpha=1.0):
     get_joint_metadata = _make_joint_metadata_fn(skel_desc)

@@ -25,7 +25,8 @@ from margipose.data_specs import ImageSpecs
 from margipose.models import load_model
 from margipose.utils import seed_all, init_algorithms, plot_skeleton_on_axes3d, plot_skeleton_on_axes
 
-CPU = torch.device('cpu')
+CPU = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+
 init_algorithms(deterministic=True)
 torch.set_grad_enabled(False)
 seed_all(12345)
@@ -105,12 +106,12 @@ def main():
         # ax1.imshow(img_input)
 
         img_skele3d = PIL.Image.fromarray(img_skele3d)
-        image_joints = draw_joints_on_image(img_input, coords_img)
+        draw_joints_on_image(img_input, coords_img[:,:2])
         joints_loc = output_to_JSON(coords_raw, filename_noext)
         # img_skele3d.show()
         
         img_skele3d.save('./outputs/3d/' + filename_noext + '.png')
-        image_joints.save('./outputs/' + filename)
+        img_input.save('./outputs/' + filename)
         #with open('./outputs/joint_loc.json', 'w') as fp:
         #    json.dump(joints_loc, fp, indent=4)
         MayaExporter.WriteToMayaAscii('./outputs/3d/' + filename_noext + '.ma', joints_loc)
@@ -134,16 +135,17 @@ def main():
             coords, img_input, img_skele3d = infer_joints(model, args.path+image)
             print(filename_noext)
             img_skele3d = PIL.Image.fromarray(img_skele3d)
-            image_joints = draw_joints_on_image(img_input, coords)
+            draw_joints_on_image(img_input, coords)
             joints_loc = output_to_JSON(coords[:,:2], filename_noext)        
             img_skele3d.save('./outputs/3d/' + filename_noext + '.png')
-            image_joints.save('./outputs/' + image)
+            img_input.save('./outputs/' + image)
             joints_loc_list.append(joints_loc)
             count += 1
             end = time.time()
             print(end-start, "(s)", "completed " + str(count) + "/" + str(len(files)))
-        with open('./outputs/joint_loc_dir.json', 'w') as fp:
-            json.dump(joints_loc_list, fp, indent=4)
+        # with open('./outputs/joint_loc_dir.json', 'w') as fp:
+        #     json.dump(joints_loc_list, fp, indent=4)
+        MayaExporter.WriteToMayaAscii('./outputs/3d/' + filename_noext + '.ma', joints_loc)
 
     if(args.mode =='V' or args.mode == 'v'):
         outputPath = './inputs/tempFrames/'
@@ -163,10 +165,10 @@ def main():
             coords_img, coords_raw, img_input, img_skele3d = infer_joints(model, './inputs/tempFrames/'+image)
             # print(filename_noext)
             img_skele3d = PIL.Image.fromarray(img_skele3d)
-            image_joints = draw_joints_on_image(img_input, coords_img)
+            draw_joints_on_image(img_input, coords_img[:,:2])
             joints_loc = output_to_JSON(coords_raw, filename_noext)        
             img_skele3d.save('./outputs/3d/fromVids/' + filename_noext + '.png')
-            image_joints.save('./outputs/vids/' + image)
+            img_input.save('./outputs/vids/' + image)
             joints_loc_list.append(joints_loc)
             count += 1
             end = time.time()
@@ -192,11 +194,38 @@ def main():
             os.remove(os.path.join('./outputs/3d/fromVids/', f))
 
 def draw_joints_on_image(img, coords):
-    for x,y in coords[:,:2]:
-        r = 2
-        draw = PIL.ImageDraw.Draw(img)
-        draw.ellipse((x-r, y-r, x+r, y+r), fill='yellow', outline='orange')
-    return img
+    # print(coords.shape[0])
+    r = 2
+    linewidth = 2
+    draw = PIL.ImageDraw.Draw(img)
+
+    # draws center joints
+    draw.line((coords[0,0], coords[0,1], coords[16,0], coords[16,1]), fill='white', width=linewidth)
+    draw.line((coords[16,0], coords[16,1], coords[1,0], coords[1,1]), fill='white', width=linewidth)
+    draw.line((coords[1,0], coords[1,1], coords[15,0], coords[15,1]), fill='white', width=linewidth)
+    draw.line((coords[15,0], coords[15,1], coords[14,0], coords[14,1]), fill='white', width=linewidth)
+
+    # draw right joints
+    draw.line((coords[1,0], coords[1,1], coords[2,0], coords[2,1]), fill='blue', width=linewidth)
+    draw.line((coords[2,0], coords[2,1], coords[3,0], coords[3,1]), fill='blue', width=linewidth)
+    draw.line((coords[3,0], coords[3,1], coords[4,0], coords[4,1]), fill='blue', width=linewidth)
+    draw.line((coords[14,0], coords[14,1], coords[8,0], coords[8,1]), fill='blue', width=linewidth)
+    draw.line((coords[8,0], coords[8,1], coords[9,0], coords[9,1]), fill='blue', width=linewidth)
+    draw.line((coords[9,0], coords[9,1], coords[10,0], coords[10,1]), fill='blue', width=linewidth)
+
+    # draw left joints
+    draw.line((coords[1,0], coords[1,1], coords[5,0], coords[5,1]), fill='red', width=linewidth)
+    draw.line((coords[5,0], coords[5,1], coords[6,0], coords[6,1]), fill='red', width=linewidth)
+    draw.line((coords[6,0], coords[6,1], coords[7,0], coords[7,1]), fill='red', width=linewidth)
+    draw.line((coords[14,0], coords[14,1], coords[11,0], coords[11,1]), fill='red', width=linewidth)
+    draw.line((coords[11,0], coords[11,1], coords[12,0], coords[12,1]), fill='red', width=linewidth)
+    draw.line((coords[12,0], coords[12,1], coords[13,0], coords[13,1]), fill='red', width=linewidth)
+
+    for i in range(coords.shape[0]):
+        # r = 1
+        (x,y) = coords[i,:]
+        draw.ellipse((x-r, y-r, x+r, y+r), fill='white', outline='gray')
+
 
 def output_to_JSON(coords, filename):
     # create JSON file with all the joints saved
