@@ -59,26 +59,41 @@ class VideoFrames:
     @staticmethod
     def ExtractFrames(videoLoc, saveDir):
         vid = cv2.VideoCapture(videoLoc)
-        fps = vid.get(cv2.CAP_PROP_FPS)
-        frame_count = vid.get(cv2.CAP_PROP_FRAME_COUNT)
-        # print(fps, "fps")
-        # print(frame_count, "frames")
-        # print(vid)
+        fps = int(vid.get(cv2.CAP_PROP_FPS))
+        frameCount = int(vid.get(cv2.CAP_PROP_FRAME_COUNT))
+        frameHeight = int(vid.get(cv2.CAP_PROP_FRAME_HEIGHT))
+        frameWidth = int(vid.get(cv2.CAP_PROP_FRAME_WIDTH))
+        frameFourCC = int(vid.get(cv2.CAP_PROP_FOURCC))
+        print(fps, "fps", type(fps))
+        print(frameCount, "frames", type(frameCount))
+        print(frameHeight, frameWidth, type(frameHeight))
+        # print(frameFourCC,  "CC", type(frameFourCC))
         count = 0
-        # videoArray = np.zeros()
-        # print(vid.isOpened())
+        frameArray = np.zeros((frameHeight, frameWidth, 3 ,frameCount))
+        print(frameArray.shape)
         while(vid.isOpened()):
             ret, frame = vid.read()
             if ret == False:
                 print("goes here")
                 break
-            if count == 20: # for troubleshooting
+            if count == 5: # for troubleshooting
                 break
             # print(frame.shape)
             # print(type(frame))
             cv2.imwrite(saveDir + str(count) + '.jpg', frame)
+            frameArray[:,:,:,count] = frame
+            print(frame.shape)
+            # plt.imshow(frameArray[:,:,1,count])
+            # plt.imshow(frame[:,:,0])
+            # plt.show()
+            print(np.array_equal(frame, frameArray[:,:,:,count]))
             count +=1
         vid.release()
+        print(frameArray[:,:,:,0].shape, "here <----")
+        # img =PIL.Image.fromarray(frameArray[:,:,:,2],'RGB')
+        # img.show()
+        # plt.im
+        # cv2.cv2.imshow("image", frameArray[:,:,:,0])
         return(fps)
 
     @staticmethod

@@ -159,7 +159,7 @@ def main():
         start = time.time()
         model = load_model(args.model).to(CPU).eval()
         end = time.time()
-        print(end-start, "To load Model")
+        print(end-start, "(s) to load Model")
 
         # AllinOneVideo
         # VideoFrames.AllinOne(args.path, args.model)
