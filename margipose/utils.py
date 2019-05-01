@@ -127,9 +127,9 @@ def plot_skeleton_on_axes3d(skel, skel_desc, ax: Axes3D, invert=True, alpha=1.0)
     ax.set_zlabel('y')
 
     # NOTE: y and z axes are swapped
-    xs = skel.narrow(-1, 0, 1).numpy()
-    ys = skel.narrow(-1, 2, 1).numpy()
-    zs = skel.narrow(-1, 1, 1).numpy()
+    xs = skel.narrow(-1, 0, 1).cpu().numpy()
+    ys = skel.narrow(-1, 2, 1).cpu().numpy()
+    zs = skel.narrow(-1, 1, 1).cpu().numpy()
 
     # Correct aspect ratio (https://stackoverflow.com/a/21765085)
     max_range = np.array([

@@ -72,9 +72,9 @@ class VideoFrames:
             if ret == False:
                 print("goes here")
                 break
-            if count == 5: # for troubleshooting
+            if count == 20: # for troubleshooting
                 break
-            print(frame.shape)
+            # print(frame.shape)
             # print(type(frame))
             cv2.imwrite(saveDir + str(count) + '.jpg', frame)
             count +=1
