@@ -9,11 +9,13 @@ import argparse
 import time
 import sys
 import os
-import PIL.Image
+import PIL
+from PIL import ImageFont
 import matplotlib.pylab as plt
 import numpy as np
 import json
 import torch
+from numba import jit
 from mpl_toolkits.mplot3d import Axes3D
 from pose3d_utils.coords import ensure_cartesian
 from MayaExporter import MayaExporter
@@ -96,7 +98,7 @@ def infer_joints(model, image):
 
     return (coords_img, coords_raw, img, fig_img)
 
-
+# @jit # no significant improvements
 def main():
 
     args = parse_args()
@@ -115,7 +117,8 @@ def main():
         # ax1.imshow(img_input)
 
         img_skele3d = PIL.Image.fromarray(img_skele3d)
-        draw_skele_on_image(img_input, coords_img[:,:2])
+        # draw_skele_on_image(img_input, coords_img[:,:2])
+        draw_color_joints(img_input, coords_img[:,:2])
         joints_loc = output_to_JSON(coords_raw, filename_noext)
         # img_skele3d.show()
         
@@ -147,7 +150,7 @@ def main():
             print(filename_noext)
             img_skele3d = PIL.Image.fromarray(img_skele3d)
             draw_skele_on_image(img_input, coords)
-            joints_loc = output_to_JSON(coords[:,:2], filename_noext)        
+            # joints_loc = output_to_JSON(coords[:,:2], filename_noext)        
             img_skele3d.save('./outputs/3d/' + filename_noext + '.png')
             img_input.save('./outputs/' + image)
             joints_loc_list.append(joints_loc)
@@ -184,7 +187,7 @@ def main():
             draw_skele_on_image(img_scaled, coords_img[:,:2])
             finalFrameArray[:,:,:,i] = np.array(img_scaled, dtype=np.uint8)
             end = time.time()
-            print(end-start, "(s)", "frames completed " + str(i) + "/" + str(frameArray.shape[3]))
+            print(end-start, "(s)", "frames completed " + str(i+1) + "/" + str(frameArray.shape[3]))
         VideoFrames.FrametoVid(finalFrameArray, skel3DArray, fps, filename_noext)
 
 
@@ -201,26 +204,64 @@ def draw_skele_on_image(img, coords):
     draw.line((coords[15,0], coords[15,1], coords[14,0], coords[14,1]), fill='white', width=linewidth)
 
     # draw right joints
-    draw.line((coords[1,0], coords[1,1], coords[2,0], coords[2,1]), fill='blue', width=linewidth)
-    draw.line((coords[2,0], coords[2,1], coords[3,0], coords[3,1]), fill='blue', width=linewidth)
-    draw.line((coords[3,0], coords[3,1], coords[4,0], coords[4,1]), fill='blue', width=linewidth)
-    draw.line((coords[14,0], coords[14,1], coords[8,0], coords[8,1]), fill='blue', width=linewidth)
-    draw.line((coords[8,0], coords[8,1], coords[9,0], coords[9,1]), fill='blue', width=linewidth)
-    draw.line((coords[9,0], coords[9,1], coords[10,0], coords[10,1]), fill='blue', width=linewidth)
+    draw.line((coords[1,0], coords[1,1], coords[2,0], coords[2,1]), fill='red', width=linewidth)
+    draw.line((coords[2,0], coords[2,1], coords[3,0], coords[3,1]), fill='red', width=linewidth)
+    draw.line((coords[3,0], coords[3,1], coords[4,0], coords[4,1]), fill='red', width=linewidth)
+    draw.line((coords[14,0], coords[14,1], coords[8,0], coords[8,1]), fill='red', width=linewidth)
+    draw.line((coords[8,0], coords[8,1], coords[9,0], coords[9,1]), fill='red', width=linewidth)
+    draw.line((coords[9,0], coords[9,1], coords[10,0], coords[10,1]), fill='red', width=linewidth)
 
     # draw left joints
-    draw.line((coords[1,0], coords[1,1], coords[5,0], coords[5,1]), fill='red', width=linewidth)
-    draw.line((coords[5,0], coords[5,1], coords[6,0], coords[6,1]), fill='red', width=linewidth)
-    draw.line((coords[6,0], coords[6,1], coords[7,0], coords[7,1]), fill='red', width=linewidth)
-    draw.line((coords[14,0], coords[14,1], coords[11,0], coords[11,1]), fill='red', width=linewidth)
-    draw.line((coords[11,0], coords[11,1], coords[12,0], coords[12,1]), fill='red', width=linewidth)
-    draw.line((coords[12,0], coords[12,1], coords[13,0], coords[13,1]), fill='red', width=linewidth)
+    draw.line((coords[1,0], coords[1,1], coords[5,0], coords[5,1]), fill='blue', width=linewidth)
+    draw.line((coords[5,0], coords[5,1], coords[6,0], coords[6,1]), fill='blue', width=linewidth)
+    draw.line((coords[6,0], coords[6,1], coords[7,0], coords[7,1]), fill='blue', width=linewidth)
+    draw.line((coords[14,0], coords[14,1], coords[11,0], coords[11,1]), fill='blue', width=linewidth)
+    draw.line((coords[11,0], coords[11,1], coords[12,0], coords[12,1]), fill='blue', width=linewidth)
+    draw.line((coords[12,0], coords[12,1], coords[13,0], coords[13,1]), fill='blue', width=linewidth)
 
     for i in range(coords.shape[0]):
         # r = 1
         (x,y) = coords[i,:]
         draw.ellipse((x-r, y-r, x+r, y+r), fill='white', outline='gray')
 
+def draw_color_joints(img, coords):
+    # draws color coded joints for quick qualatative evaluation
+    draw = PIL.ImageDraw.Draw(img)
+    center = 'white'
+    right = (244, 67, 54)  
+    left = (25, 118, 210)
+    font = ImageFont.truetype('./fonts/Roboto-Bold.ttf', size=10)
+# 0-4
+        # 'head_top', 'neck', 'right_shoulder', 'right_elbow', 'right_wrist',
+        # # 5-9
+        # 'left_shoulder', 'left_elbow', 'left_wrist', 'right_hip', 'right_knee',
+        # # 10-14
+        # 'right_ankle', 'left_hip', 'left_knee', 'left_ankle', 'pelvis',
+        # # 15-16
+        # 'spine', 'head'
+
+# draws center joints
+    draw.text((coords[0,0], coords[0,1]), "HT", fill=center, font=font)
+    draw.text((coords[1,0], coords[1,1]), "N", fill=center, font=font)
+    draw.text((coords[14,0], coords[14,1]), "P", fill=center, font=font)
+    draw.text((coords[15,0], coords[15,1]), "S", fill=center, font=font)
+    draw.text((coords[16,0], coords[16,1]), "H", fill=center, font=font)
+
+    # draw right joints
+    draw.text((coords[2,0], coords[2,1]), 'RS', fill=right, font=font)
+    draw.text((coords[3,0], coords[3,1]), 'RE', fill=right, font=font)
+    draw.text((coords[4,0], coords[4,1]), 'RE', fill=right, font=font)
+    draw.text((coords[8,0], coords[8,1]), 'RH', fill=right, font=font)
+    draw.text((coords[9,0], coords[9,1]), 'RK', fill=right, font=font)    
+    draw.text((coords[10,0], coords[10,1]), 'RA', fill=right, font=font)
+
+    # draw left joints
+    draw.text((coords[5,0], coords[5,1]), 'LS', fill=left, font=font)
+    draw.text((coords[6,0], coords[6,1]), 'LE', fill=left, font=font)
+    draw.text((coords[7,0], coords[7,1]), 'LW', fill=left, font=font)
+    draw.text((coords[11,0], coords[11,1]), 'LH', fill=left, font=font)
+    draw.text((coords[12,0], coords[12,1]), 'LK', fill=left, font=font)
+    draw.text((coords[13,0], coords[13,1]), 'LA', fill=left, font=font)
 
 def output_to_JSON(coords, filename):
     # create JSON file with all the joints saved
