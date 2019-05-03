@@ -68,11 +68,12 @@ class VideoFrames:
         outskel3D.release()
 
     
-# outtest = cv2.VideoWriter('./outputs/skel3d_test.avi', 
-#             cv2.VideoWriter_fourcc(*'MJPG'), 23, (640,480))
 
-# for i in range(30):
-#     img = cv2.imread('./outputs/3d/skel3d_'+str(i)+'.jpg')
-#     outtest.write(img)
-# outtest.release()
 
+# vid = cv2.VideoCapture('./inputs/000003.mp4')
+# fps = int(vid.get(cv2.CAP_PROP_FPS))
+# frameTotal = int(vid.get(cv2.CAP_PROP_FRAME_COUNT))
+# frameHeight = int(vid.get(cv2.CAP_PROP_FRAME_HEIGHT))
+# frameWidth = int(vid.get(cv2.CAP_PROP_FRAME_WIDTH))
+
+# print(frameTotal, frameHeight, frameWidth)

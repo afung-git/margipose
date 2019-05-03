@@ -141,11 +141,14 @@ def plot_skeleton_on_axes3d(skel, skel_desc, ax: Axes3D, invert=True, alpha=1.0)
     # ax.set_xlim(mid_x - max_range, mid_x + max_range)
     # ax.set_ylim(mid_y - max_range, mid_y + max_range)
     # ax.set_zlim(mid_z - max_range, mid_z + max_range)
-    ax.set_xlim(-.5, 1)
-    ax.set_ylim(-.5, 5)
-    ax.set_zlim(-.5, .5)
+    ax.set_xlim(-.8, .8)
+    ax.set_ylim(-.5, .5)
+    ax.set_zlim(-.8, .5)
+    ax.set_xticklabels([])
+    ax.set_yticklabels([])
+    ax.set_zticklabels([])
     ax.set_aspect('equal')
-   
+
     if invert:
         ax.invert_zaxis()
 
