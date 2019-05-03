@@ -9,8 +9,8 @@ def create_common_arg_parser():
     """Create an argument parser for the root CLI command shared by subcommands."""
     parser = argparse.ArgumentParser(prog='margipose',
                                      formatter_class=argparse.ArgumentDefaultsHelpFormatter)
-    parser.add_argument('--device', help='primary computation device, eg "cpu" or "cuda:0"',
-                        default='cpu')
+    # parser.add_argument('--device', help='primary computation device, eg "cpu" or "cuda:0"',
+    #                     default='cpu')
     return parser
 
 
@@ -20,8 +20,8 @@ Default_Common_Args = create_common_arg_parser().parse_args([])
 def common_args_to_opts(common_args):
     """Parse common_args into a dict of Python objects."""
     opts = dict(
-        device=torch.device(common_args.device),
-        # device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
+        # device=torch.device(common_args.device),
+        device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
     )
     return opts
 

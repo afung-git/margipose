@@ -15,7 +15,6 @@ import matplotlib.pylab as plt
 import numpy as np
 import json
 import torch
-from numba import jit
 from mpl_toolkits.mplot3d import Axes3D
 from pose3d_utils.coords import ensure_cartesian
 from MayaExporter import MayaExporter
@@ -31,6 +30,7 @@ CPU = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
 # CPU = torch.device('cpu')
 init_algorithms(deterministic=True)
 torch.set_grad_enabled(False)
+torch.no_grad()
 seed_all(12345)
 
 def parse_args():
@@ -69,10 +69,10 @@ def infer_joints(model, image):
 
     # Make inference
     output = model(input_image[None, ...])[0]
-
+    
     # Create location of normalized skeleton
     norm_skel3d = ensure_cartesian(output.to(CPU, torch.float64), d=3)
-    # norm_skel3d = ensure_cartesian(output.to(CPU, torch.cuda.FloatTensor), d=3)
+    # norm_skel3d = ensure_cartesian(output, d=3)
     coords = norm_skel3d.cpu().numpy()
     # if torch.cuda.is_available():    
         # coords = norm_skel3d.cpu().numpy()
@@ -84,7 +84,7 @@ def infer_joints(model, image):
     # print(coords_2d)
     img = input_specs.unconvert(input_image.to(CPU).cpu())
     # print(norm_skel3d)
-    
+       
     # create visualization of normalized skeleton
     fig = plt.figure(1)
     plt_3d: Axes3D = fig.add_subplot(1, 1, 1, projection='3d')
@@ -95,6 +95,7 @@ def infer_joints(model, image):
     fig.canvas.draw()
     fig_img = np.array(fig.canvas.renderer._renderer, np.uint8)[:,:,:3]
     # fig_img = fig_img[:,:,:3] 
+    plt.close(fig)
 
     return (coords_img, coords_raw, img, fig_img)
 
@@ -107,18 +108,16 @@ def main():
         filename_noext = os.path.splitext(filename)[0]
         model = load_model(args.model).to(CPU).eval()
         coords_img, coords_raw, img_input, img_skele3d = infer_joints(model, args.path)
-        # print(img_skeimg_inputle3d)
-
-        # fig = plt.figure(figsize=(32, 8))
-        # ax1 = fig.add_subplot(1, 3, 1)
-        # ax2 = fig.add_subplot(1, 3, 2)
-        # ax3 = fig.add_subplot(1, 3, 3)
-
-        # ax1.imshow(img_input)
+        # print(img_skele3d.shape)
 
         img_skele3d = PIL.Image.fromarray(img_skele3d)
+        
+
         # draw_skele_on_image(img_input, coords_img[:,:2])
+        # Used for qualitative evaluation
         draw_color_joints(img_input, coords_img[:,:2])
+
+
         joints_loc = output_to_JSON(coords_raw, filename_noext)
         # img_skele3d.show()
         
@@ -128,9 +127,7 @@ def main():
         #    json.dump(joints_loc, fp, indent=4)
         MayaExporter.WriteToMayaAscii('./outputs/3d/' + filename_noext + '.ma', joints_loc)
 
-        # ax2.imshow(img_skele3d)
-        # ax3.imshow(image_joints)
-        # plt.show()
+
 
     if(args.mode =='D' or args.mode == 'd'):
         files = os.listdir(args.path)
@@ -142,23 +139,24 @@ def main():
         count = 0
         joints_loc_list = []
         for image in files:
-            
-            filename_noext = os.path.splitext(image)[0]
             start = time.time()
-            coords, img_input, img_skele3d = infer_joints(model, args.path+image)
-            end = time.time()
-            print(filename_noext)
+            filename_noext = os.path.splitext(image)[0]
+            coords_img, coords_raw, img_input, img_skele3d = infer_joints(model, args.path)
+            # print(filename_noext)
             img_skele3d = PIL.Image.fromarray(img_skele3d)
-            draw_skele_on_image(img_input, coords)
-            # joints_loc = output_to_JSON(coords[:,:2], filename_noext)        
+                    
+            # draw_skele_on_image(img_input, coords_img[:,:2])
+            # Used for qualitative evaluation
+            draw_color_joints(img_input, coords_img[:,:2])
+
+            joints_loc = output_to_JSON(coords_raw, filename_noext)   
+
             img_skele3d.save('./outputs/3d/' + filename_noext + '.png')
             img_input.save('./outputs/' + image)
             joints_loc_list.append(joints_loc)
             count += 1
-            
-            print(end-start, "(s)", "completed " + str(count) + "/" + str(len(files)))
-        # with open('./outputs/joint_loc_dir.json', 'w') as fp:
-        #     json.dump(joints_loc_list, fp, indent=4)
+            print(time.time()-start, "(s)", "completed " + str(count) + "/" + str(len(files)))
+
         MayaExporter.WriteToMayaAscii('./outputs/3d/' + filename_noext + '.ma', joints_loc)
 
     if(args.mode =='V' or args.mode == 'v'):
@@ -169,26 +167,33 @@ def main():
         frameArray = np.asarray(frameArray, dtype=np.uint8)
         skel3DArray = np.zeros((480, 640, 3, frameArray.shape[3]), dtype=np.uint8)
         finalFrameArray = np.zeros((256, 256, 3, frameArray.shape[3]), dtype=np.uint8)
-
+        
+        # print(frameArray.shape[3])
 
         start = time.time()
         model = load_model(args.model).to(CPU).eval()
         end = time.time()
         print(end-start, "(s) to load Model")
 
-        # joints_loc_list = []
 
         for i in range(frameArray.shape[3]):
         # for i in range(10):
             start = time.time()
  
             img = PIL.Image.fromarray(frameArray[:,:,:,i][..., ::-1])
+            
             coords_img, coords_raw, img_scaled, skel3DArray[:,:,:,i] = infer_joints(model, img)
             draw_skele_on_image(img_scaled, coords_img[:,:2])
+            # img3d = PIL.Image.fromarray(skel3DArray[:,:,:,i])
             finalFrameArray[:,:,:,i] = np.array(img_scaled, dtype=np.uint8)
-            end = time.time()
-            print(end-start, "(s)", "frames completed " + str(i+1) + "/" + str(frameArray.shape[3]))
+            # skel3DArray[:,:,:,i] = np.array(img3d, dtype=np.uint8)
+            print(time.time()-start, "(s)", "frames completed " + str(i+1) + "/" + str(frameArray.shape[3]))
+            # img3d.save('./outputs/3d/'+'skel3d_'+str(i)+'.jpg')
+        # PIL.Image.SAVE(skel3DArray[:,:,:,-1])
+        # plt.imsave()
+        # plt.show()
         VideoFrames.FrametoVid(finalFrameArray, skel3DArray, fps, filename_noext)
+
 
 
 def draw_skele_on_image(img, coords):
@@ -228,8 +233,8 @@ def draw_color_joints(img, coords):
     # draws color coded joints for quick qualatative evaluation
     draw = PIL.ImageDraw.Draw(img)
     center = 'white'
-    right = (244, 67, 54)  
-    left = (25, 118, 210)
+    right = (251, 18, 34)  
+    left = (0, 0, 255)
     font = ImageFont.truetype('./fonts/Roboto-Bold.ttf', size=10)
 # 0-4
         # 'head_top', 'neck', 'right_shoulder', 'right_elbow', 'right_wrist',

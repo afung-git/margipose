@@ -18,19 +18,18 @@ class VideoFrames:
         frameHeight = int(vid.get(cv2.CAP_PROP_FRAME_HEIGHT))
         frameWidth = int(vid.get(cv2.CAP_PROP_FRAME_WIDTH))
         # frameFourCC = int(vid.get(cv2.CAP_PROP_FOURCC))
-        print(fps, "fps", type(fps))
-        print(frameTotal, "frames", type(frameTotal))
-        print(frameHeight, frameWidth, type(frameHeight))
+        # print(frameTotal, "Frames", type(frameTotal))
+        print(frameHeight, 'x', frameWidth, 'Image size')
         # print(frameFourCC,  "CC", type(frameFourCC))
         count = 0
         frameArray = np.zeros((frameHeight, frameWidth, 3 ,frameTotal), dtype=np.uint8)
         # frameArray = np
         
-        print(frameArray.shape, "initial shape")
+        print(frameArray.shape[3], "Initial Frame Total")
         while(vid.isOpened()):
             ret, frame = vid.read()
             if ret == False:
-                print("goes here")
+                print(time.time()-start, "(s) to complete video to frame")
                 break
             # if count == 5: # for troubleshooting
             #     break
@@ -42,33 +41,38 @@ class VideoFrames:
             count +=1
         vid.release()
         
-        print(frameArray.shape, "final shape")
-        print(fps, "fps")
-        end = time.time()
-        print(end-start, "(s) to complete vid to frame")
+        # print(frameArray[:,:,:,:count].shape, "Actual Shape")
+        print(fps, "FPS")
+        # number of frames using CAP_PROP_FRAME_COUNT is only an estimate, count keeps track of actual frames
+        print(count, 'Actaul Total Frames')
         # cv2.imwrite('./outputs/testimg01.jpg', frameArray[:,:,:,-1])
         # cv2.imwrite('./outputs/testimg01frame.jpg', frame)
-        return(frameArray, fps)
+        return(frameArray[:,:,:,:count], fps)
 
     @staticmethod
     def FrametoVid(frameArray, skel3DArray, fps, filename):
-        frameWidth = frameHeight = 256
-        skel3DWidth = 480
-        skel3DHeight = 640
+        # OPENCV can only have one VideoWriter object at a time
+
         outVid = cv2.VideoWriter('./outputs/'+filename+'.avi', 
-            cv2.VideoWriter_fourcc(*'DIVX'), fps, (frameWidth,frameHeight))
+            cv2.VideoWriter_fourcc(*'MJPG'), fps, (frameArray.shape[1],frameArray.shape[0]))
 
-        outskel3D = cv2.VideoWriter('./outputs/3d/skel3D_'+filename+'.avi', 
-            cv2.VideoWriter_fourcc(*'DIVX'), fps, (skel3DWidth,skel3DHeight))
-
-        # frames = len(os.listdir(frameLoc))
         for i in range(frameArray.shape[3]):
             outVid.write(frameArray[:,:,:,i][..., ::-1])
-            outskel3D.write(skel3DArray[:,:,:,i][..., ::-1])
         outVid.release()
+            
+        outskel3D = cv2.VideoWriter('./outputs/'+'skel_'+filename+'.avi', 
+            cv2.VideoWriter_fourcc(*'MJPG'), fps, (skel3DArray.shape[1],skel3DArray.shape[0]))
+
+        for i in range(skel3DArray.shape[3]):
+            outskel3D.write(skel3DArray[:,:,:,i])
         outskel3D.release()
 
     
+# outtest = cv2.VideoWriter('./outputs/skel3d_test.avi', 
+#             cv2.VideoWriter_fourcc(*'MJPG'), 23, (640,480))
 
-    
+# for i in range(30):
+#     img = cv2.imread('./outputs/3d/skel3d_'+str(i)+'.jpg')
+#     outtest.write(img)
+# outtest.release()
 
