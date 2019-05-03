@@ -54,14 +54,14 @@ class VideoFrames:
         # OPENCV can only have one VideoWriter object at a time
 
         outVid = cv2.VideoWriter('./outputs/'+filename+'.avi', 
-            cv2.VideoWriter_fourcc(*'MJPG'), fps, (frameArray.shape[1],frameArray.shape[0]))
+            cv2.VideoWriter_fourcc(*'DIVX'), fps, (frameArray.shape[1],frameArray.shape[0]))
 
         for i in range(frameArray.shape[3]):
             outVid.write(frameArray[:,:,:,i][..., ::-1])
         outVid.release()
             
         outskel3D = cv2.VideoWriter('./outputs/'+'skel_'+filename+'.avi', 
-            cv2.VideoWriter_fourcc(*'MJPG'), fps, (skel3DArray.shape[1],skel3DArray.shape[0]))
+            cv2.VideoWriter_fourcc(*'DIVX'), fps, (skel3DArray.shape[1],skel3DArray.shape[0]))
 
         for i in range(skel3DArray.shape[3]):
             outskel3D.write(skel3DArray[:,:,:,i])
