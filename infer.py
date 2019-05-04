@@ -9,7 +9,8 @@ import argparse
 import time
 import sys
 import os
-import PIL.Image
+import PIL
+from PIL import ImageFont
 import matplotlib.pylab as plt
 import numpy as np
 import json
@@ -25,10 +26,11 @@ from margipose.data_specs import ImageSpecs
 from margipose.models import load_model
 from margipose.utils import seed_all, init_algorithms, plot_skeleton_on_axes3d, plot_skeleton_on_axes
 
-CPU = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+CPU = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
 # CPU = torch.device('cpu')
 init_algorithms(deterministic=True)
 torch.set_grad_enabled(False)
+torch.no_grad()
 seed_all(12345)
 
 def parse_args():
@@ -49,11 +51,13 @@ def parse_args():
     return parser.parse_args()
 
 
-def infer_joints(model, img):
+def infer_joints(model, image):
     #Obtains input spec from model and resizes the image
     input_specs: ImageSpecs = model.data_specs.input_specs
-    image: PIL.Image.Image = PIL.Image.open(img, 'r')
-
+    try:
+        image: PIL.Image.Image = PIL.Image.open(image, 'r')
+    except:
+        pass
     if image.width != image.height:
         cropSize = min(image.width, image.height)
         image = image.crop((image.width/2 - cropSize/2, image.height/2 - cropSize/2,
@@ -61,12 +65,14 @@ def infer_joints(model, img):
 
     image.thumbnail((input_specs.width, input_specs.height))
     input_image = input_specs.convert(image).to(CPU, torch.float32)
+    # input_image = input_specs.convert(image).to(CPU, torch.cuda)
 
     # Make inference
     output = model(input_image[None, ...])[0]
-
+    
     # Create location of normalized skeleton
     norm_skel3d = ensure_cartesian(output.to(CPU, torch.float64), d=3)
+    # norm_skel3d = ensure_cartesian(output, d=3)
     coords = norm_skel3d.cpu().numpy()
     # if torch.cuda.is_available():    
         # coords = norm_skel3d.cpu().numpy()
@@ -78,7 +84,7 @@ def infer_joints(model, img):
     # print(coords_2d)
     img = input_specs.unconvert(input_image.to(CPU).cpu())
     # print(norm_skel3d)
-    
+       
     # create visualization of normalized skeleton
     fig = plt.figure(1)
     plt_3d: Axes3D = fig.add_subplot(1, 1, 1, projection='3d')
@@ -87,11 +93,13 @@ def infer_joints(model, img):
 
     #saving all outputs as image files with corresponding filename
     fig.canvas.draw()
-    fig_img = np.array(fig.canvas.renderer._renderer, np.uint8)
+    fig_img = np.array(fig.canvas.renderer._renderer, np.uint8)[:,:,:3]
+    # fig_img = fig_img[:,:,:3] 
+    plt.close(fig)
 
     return (coords_img, coords_raw, img, fig_img)
 
-
+# @jit # no significant improvements
 def main():
 
     args = parse_args()
@@ -100,17 +108,16 @@ def main():
         filename_noext = os.path.splitext(filename)[0]
         model = load_model(args.model).to(CPU).eval()
         coords_img, coords_raw, img_input, img_skele3d = infer_joints(model, args.path)
-        # print(img_skeimg_inputle3d)
-
-        # fig = plt.figure(figsize=(32, 8))
-        # ax1 = fig.add_subplot(1, 3, 1)
-        # ax2 = fig.add_subplot(1, 3, 2)
-        # ax3 = fig.add_subplot(1, 3, 3)
-
-        # ax1.imshow(img_input)
+        # print(img_skele3d.shape)
 
         img_skele3d = PIL.Image.fromarray(img_skele3d)
-        draw_skele_on_image(img_input, coords_img[:,:2])
+        
+
+        # draw_skele_on_image(img_input, coords_img[:,:2])
+        # Used for qualitative evaluation
+        draw_color_joints(img_input, coords_img[:,:2])
+
+
         joints_loc = output_to_JSON(coords_raw, filename_noext)
         # img_skele3d.show()
         
@@ -119,10 +126,8 @@ def main():
         #with open('./outputs/joint_loc.json', 'w') as fp:
         #    json.dump(joints_loc, fp, indent=4)
         MayaExporter.WriteToMayaAscii('./outputs/3d/' + filename_noext + '.ma', joints_loc)
-        MayaExporter.WriteAtomFile('./outputs/3d/' + filename_noext + '_anim.atom', 'C:/Users/imagi/Documents/maya/projects/default/scenes/sk_mannikin_margipose.0005.ma', 1, 1, (coords_raw*100)) 
-        # ax2.imshow(img_skele3d)
-        # ax3.imshow(image_joints)
-        # plt.show()
+
+
 
     if(args.mode =='D' or args.mode == 'd'):
         files = os.listdir(args.path)
@@ -136,72 +141,60 @@ def main():
         for image in files:
             start = time.time()
             filename_noext = os.path.splitext(image)[0]
-            coords, img_input, img_skele3d = infer_joints(model, args.path+image)
-            print(filename_noext)
+            coords_img, coords_raw, img_input, img_skele3d = infer_joints(model, args.path)
+            # print(filename_noext)
             img_skele3d = PIL.Image.fromarray(img_skele3d)
-            draw_skele_on_image(img_input, coords)
-            joints_loc = output_to_JSON(coords[:,:2], filename_noext)        
+                    
+            # draw_skele_on_image(img_input, coords_img[:,:2])
+            # Used for qualitative evaluation
+            draw_color_joints(img_input, coords_img[:,:2])
+
+            joints_loc = output_to_JSON(coords_raw, filename_noext)   
+
             img_skele3d.save('./outputs/3d/' + filename_noext + '.png')
             img_input.save('./outputs/' + image)
             joints_loc_list.append(joints_loc)
             count += 1
-            end = time.time()
-            print(end-start, "(s)", "completed " + str(count) + "/" + str(len(files)))
-        # with open('./outputs/joint_loc_dir.json', 'w') as fp:
-        #     json.dump(joints_loc_list, fp, indent=4)
+            print(time.time()-start, "(s)", "completed " + str(count) + "/" + str(len(files)))
+
         MayaExporter.WriteToMayaAscii('./outputs/3d/' + filename_noext + '.ma', joints_loc)
 
     if(args.mode =='V' or args.mode == 'v'):
-        outputPath = './inputs/tempFrames/'
-        fps = VideoFrames.ExtractFrames(args.path, outputPath)
-        files = os.listdir('./inputs/tempFrames/')
-        print(len(files))
+        filename = os.path.basename(args.path)
+        filename_noext = os.path.splitext(filename)[0]
+        (frameArray, fps) = VideoFrames.ExtractFrames(args.path)
+
+        frameArray = np.asarray(frameArray, dtype=np.uint8)
+        skel3DArray = np.zeros((480, 640, 3, frameArray.shape[3]), dtype=np.uint8)
+        finalFrameArray = np.zeros((256, 256, 3, frameArray.shape[3]), dtype=np.uint8)
+        
+        # print(frameArray.shape[3])
+
         start = time.time()
         model = load_model(args.model).to(CPU).eval()
         end = time.time()
         print(end-start, "(s) to load Model")
 
-        # AllinOneVideo
-        # VideoFrames.AllinOne(args.path, args.model)
-        # VideoFrames.AllinOne(args.path, ar)
 
-
-        joints_loc_list = []
-        count = 0
-        for image in files:
-            # print(frame)
+        for i in range(frameArray.shape[3]):
+        # for i in range(10):
             start = time.time()
-            filename_noext = os.path.splitext(image)[0]
-            coords_img, coords_raw, img_input, img_skele3d = infer_joints(model, './inputs/tempFrames/'+image)
-            # print(filename_noext)
-            img_skele3d = PIL.Image.fromarray(img_skele3d)
-            draw_skele_on_image(img_input, coords_img[:,:2])
-            joints_loc = output_to_JSON(coords_raw, filename_noext)        
-            img_skele3d.save('./outputs/3d/fromVids/' + filename_noext + '.png')
-            img_input.save('./outputs/vids/' + image)
-            joints_loc_list.append(joints_loc)
-            count += 1
-            end = time.time()
-            print(end-start, "(s)", "frames completed " + str(count) + "/" + str(len(files)))
-        # with open('./outputs/joint_loc_dir.json', 'w') as fp:
-        #     json.dump(joints_loc_list, fp, indent=4)
-        print('Completed')
-        # os.path.splitext(filename)[0]
-        VideoFrames.FrametoVid('./outputs/vids/', os.path.splitext(os.path.basename(args.path))[0], fps)
-        # VideoFrames.FrametoVid('./outputs/3d/fromVids', os.path.splitext(os.path.basename(args.path))[0], fps)
+ 
+            img = PIL.Image.fromarray(frameArray[:,:,:,i][..., ::-1])
+            
+            coords_img, coords_raw, img_scaled, skel3DArray[:,:,:,i] = infer_joints(model, img)
+            draw_skele_on_image(img_scaled, coords_img[:,:2])
+            # img3d = PIL.Image.fromarray(skel3DArray[:,:,:,i])
+            finalFrameArray[:,:,:,i] = np.array(img_scaled, dtype=np.uint8)
+            # skel3DArray[:,:,:,i] = np.array(img3d, dtype=np.uint8)
+            print(time.time()-start, "(s)", "frames completed " + str(i+1) + "/" + str(frameArray.shape[3]))
+            # img3d.save('./outputs/3d/'+'skel3d_'+str(i)+'.jpg')
+        # PIL.Image.SAVE(skel3DArray[:,:,:,-1])
+        # plt.imsave()
+        # plt.show()
+        VideoFrames.FrametoVid(finalFrameArray, skel3DArray, fps, filename_noext)
 
-        # delete all temp files
-        filelist = os.listdir('./inputs/tempFrames/')
-        for f in filelist:
-            os.remove(os.path.join('./inputs/tempFrames/', f))
-        
-        filelist = os.listdir('./outputs/vids/')
-        for f in filelist:
-            os.remove(os.path.join('./outputs/vids/', f))
 
-        filelist = os.listdir('./outputs/3d/fromVids/')
-        for f in filelist:
-            os.remove(os.path.join('./outputs/3d/fromVids/', f))
 
 def draw_skele_on_image(img, coords):
     # print(coords.shape[0])
@@ -216,37 +209,73 @@ def draw_skele_on_image(img, coords):
     draw.line((coords[15,0], coords[15,1], coords[14,0], coords[14,1]), fill='white', width=linewidth)
 
     # draw right joints
-    draw.line((coords[1,0], coords[1,1], coords[2,0], coords[2,1]), fill='blue', width=linewidth)
-    draw.line((coords[2,0], coords[2,1], coords[3,0], coords[3,1]), fill='blue', width=linewidth)
-    draw.line((coords[3,0], coords[3,1], coords[4,0], coords[4,1]), fill='blue', width=linewidth)
-    draw.line((coords[14,0], coords[14,1], coords[8,0], coords[8,1]), fill='blue', width=linewidth)
-    draw.line((coords[8,0], coords[8,1], coords[9,0], coords[9,1]), fill='blue', width=linewidth)
-    draw.line((coords[9,0], coords[9,1], coords[10,0], coords[10,1]), fill='blue', width=linewidth)
+    draw.line((coords[1,0], coords[1,1], coords[2,0], coords[2,1]), fill='red', width=linewidth)
+    draw.line((coords[2,0], coords[2,1], coords[3,0], coords[3,1]), fill='red', width=linewidth)
+    draw.line((coords[3,0], coords[3,1], coords[4,0], coords[4,1]), fill='red', width=linewidth)
+    draw.line((coords[14,0], coords[14,1], coords[8,0], coords[8,1]), fill='red', width=linewidth)
+    draw.line((coords[8,0], coords[8,1], coords[9,0], coords[9,1]), fill='red', width=linewidth)
+    draw.line((coords[9,0], coords[9,1], coords[10,0], coords[10,1]), fill='red', width=linewidth)
 
     # draw left joints
-    draw.line((coords[1,0], coords[1,1], coords[5,0], coords[5,1]), fill='red', width=linewidth)
-    draw.line((coords[5,0], coords[5,1], coords[6,0], coords[6,1]), fill='red', width=linewidth)
-    draw.line((coords[6,0], coords[6,1], coords[7,0], coords[7,1]), fill='red', width=linewidth)
-    draw.line((coords[14,0], coords[14,1], coords[11,0], coords[11,1]), fill='red', width=linewidth)
-    draw.line((coords[11,0], coords[11,1], coords[12,0], coords[12,1]), fill='red', width=linewidth)
-    draw.line((coords[12,0], coords[12,1], coords[13,0], coords[13,1]), fill='red', width=linewidth)
+    draw.line((coords[1,0], coords[1,1], coords[5,0], coords[5,1]), fill='blue', width=linewidth)
+    draw.line((coords[5,0], coords[5,1], coords[6,0], coords[6,1]), fill='blue', width=linewidth)
+    draw.line((coords[6,0], coords[6,1], coords[7,0], coords[7,1]), fill='blue', width=linewidth)
+    draw.line((coords[14,0], coords[14,1], coords[11,0], coords[11,1]), fill='blue', width=linewidth)
+    draw.line((coords[11,0], coords[11,1], coords[12,0], coords[12,1]), fill='blue', width=linewidth)
+    draw.line((coords[12,0], coords[12,1], coords[13,0], coords[13,1]), fill='blue', width=linewidth)
 
     for i in range(coords.shape[0]):
         # r = 1
         (x,y) = coords[i,:]
         draw.ellipse((x-r, y-r, x+r, y+r), fill='white', outline='gray')
 
+def draw_color_joints(img, coords):
+    # draws color coded joints for quick qualatative evaluation
+    draw = PIL.ImageDraw.Draw(img)
+    center = 'white'
+    right = (251, 18, 34)  
+    left = (0, 0, 255)
+    font = ImageFont.truetype('./fonts/Roboto-Bold.ttf', size=10)
+# 0-4
+        # 'head_top', 'neck', 'right_shoulder', 'right_elbow', 'right_wrist',
+        # # 5-9
+        # 'left_shoulder', 'left_elbow', 'left_wrist', 'right_hip', 'right_knee',
+        # # 10-14
+        # 'right_ankle', 'left_hip', 'left_knee', 'left_ankle', 'pelvis',
+        # # 15-16
+        # 'spine', 'head'
+
+# draws center joints
+    draw.text((coords[0,0], coords[0,1]), "HT", fill=center, font=font)
+    draw.text((coords[1,0], coords[1,1]), "N", fill=center, font=font)
+    draw.text((coords[14,0], coords[14,1]), "P", fill=center, font=font)
+    draw.text((coords[15,0], coords[15,1]), "S", fill=center, font=font)
+    draw.text((coords[16,0], coords[16,1]), "H", fill=center, font=font)
+
+    # draw right joints
+    draw.text((coords[2,0], coords[2,1]), 'RS', fill=right, font=font)
+    draw.text((coords[3,0], coords[3,1]), 'RE', fill=right, font=font)
+    draw.text((coords[4,0], coords[4,1]), 'RE', fill=right, font=font)
+    draw.text((coords[8,0], coords[8,1]), 'RH', fill=right, font=font)
+    draw.text((coords[9,0], coords[9,1]), 'RK', fill=right, font=font)    
+    draw.text((coords[10,0], coords[10,1]), 'RA', fill=right, font=font)
+
+    # draw left joints
+    draw.text((coords[5,0], coords[5,1]), 'LS', fill=left, font=font)
+    draw.text((coords[6,0], coords[6,1]), 'LE', fill=left, font=font)
+    draw.text((coords[7,0], coords[7,1]), 'LW', fill=left, font=font)
+    draw.text((coords[11,0], coords[11,1]), 'LH', fill=left, font=font)
+    draw.text((coords[12,0], coords[12,1]), 'LK', fill=left, font=font)
+    draw.text((coords[13,0], coords[13,1]), 'LA', fill=left, font=font)
 
 def output_to_JSON(coords, filename):
     # create JSON file with all the joints saved
 
     coords = coords*100
     joints_loc = {
-        str("transform_" + filename): {
-            "root" : {
-                "t": (0,0,0),
-                "pelvis" : {
-                    "t": coords[14],
+        str("root_" + filename): {
+            "pelvis" : {
+                "t": coords[14],
                         "r_hip" : {
                             "t": coords[8],
                             "r_knee" : {
@@ -265,7 +294,7 @@ def output_to_JSON(coords, filename):
                                     },
                                 },
                             },
-                "spine_02" : {
+                "spine" : {
                     "t": coords[15],
                     "neck": {
                         "t": coords[1],
@@ -296,7 +325,6 @@ def output_to_JSON(coords, filename):
                         },
                     },
                 },
-            },
             },
         }
 

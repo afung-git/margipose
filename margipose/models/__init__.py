@@ -30,6 +30,7 @@ def create_model(model_desc):
 def load_model(model_file):
     details = torch.load(model_file)
     model = create_model(details['model_desc'])
+    # model.cuda()
     model.load_state_dict(details['state_dict'])
     # print('model loaded')
     return model

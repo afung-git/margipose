@@ -21,7 +21,7 @@ def common_args_to_opts(common_args):
     """Parse common_args into a dict of Python objects."""
     opts = dict(
         # device=torch.device(common_args.device),
-        device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+        device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
     )
     return opts
 
