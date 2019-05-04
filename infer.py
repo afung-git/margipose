@@ -119,7 +119,7 @@ def main():
         #with open('./outputs/joint_loc.json', 'w') as fp:
         #    json.dump(joints_loc, fp, indent=4)
         MayaExporter.WriteToMayaAscii('./outputs/3d/' + filename_noext + '.ma', joints_loc)
-
+        MayaExporter.WriteAtomFile('./outputs/3d/' + filename_noext + '_anim.atom', 'C:/Users/imagi/Documents/maya/projects/default/scenes/sk_mannikin_margipose.0005.ma', 1, 1, (coords_raw*100)) 
         # ax2.imshow(img_skele3d)
         # ax3.imshow(image_joints)
         # plt.show()
@@ -242,9 +242,11 @@ def output_to_JSON(coords, filename):
 
     coords = coords*100
     joints_loc = {
-        str("root_" + filename): {
-            "pelvis" : {
-                "t": coords[14],
+        str("transform_" + filename): {
+            "root" : {
+                "t": (0,0,0),
+                "pelvis" : {
+                    "t": coords[14],
                         "r_hip" : {
                             "t": coords[8],
                             "r_knee" : {
@@ -263,7 +265,7 @@ def output_to_JSON(coords, filename):
                                     },
                                 },
                             },
-                "spine" : {
+                "spine_02" : {
                     "t": coords[15],
                     "neck": {
                         "t": coords[1],
@@ -294,6 +296,7 @@ def output_to_JSON(coords, filename):
                         },
                     },
                 },
+            },
             },
         }
 
