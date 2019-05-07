@@ -24,7 +24,7 @@ from margipose.cli import Subcommand
 from margipose.data.skeleton import CanonicalSkeletonDesc
 from margipose.data_specs import ImageSpecs
 from margipose.models import load_model
-from margipose.utils import seed_all, init_algorithms, plot_skeleton_on_axes3d, plot_skeleton_on_axes
+from margipose.utils import seed_all, init_algorithms, plot_skeleton_on_axes3d, plot_skeleton_on_axes, angleBetween
 
 CPU = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
 # CPU = torch.device('cpu')
@@ -62,6 +62,9 @@ def infer_joints(model, image):
         cropSize = min(image.width, image.height)
         image = image.crop((image.width/2 - cropSize/2, image.height/2 - cropSize/2,
                     image.width/2 + cropSize/2, image.height/2 + cropSize/2))
+
+    if image.width < 256:
+        image = image.resize((256, 256), PIL.Image.ANTIALIAS)
 
     image.thumbnail((input_specs.width, input_specs.height))
     input_image = input_specs.convert(image).to(CPU, torch.float32)
@@ -112,6 +115,17 @@ def main():
 
         img_skele3d = PIL.Image.fromarray(img_skele3d)
         
+        # Calculate step angle
+        vector1 = coords_img[8,:2] - coords_img[10,:2]
+        vecto2 = (0,-1)
+
+        
+        print(angleBetween(vector1, vecto2)*180/np.pi, "right")
+
+        vector1 = coords_img[11,:2] - coords_img[13,:2]
+        # vector1=(.5,0,0)
+        vecto2 = (0,-1)
+        print(angleBetween(vector1, vecto2)*180/np.pi, "left")
 
         # draw_skele_on_image(img_input, coords_img[:,:2])
         # Used for qualitative evaluation
@@ -167,13 +181,14 @@ def main():
         frameArray = np.asarray(frameArray, dtype=np.uint8)
         skel3DArray = np.zeros((480, 640, 3, frameArray.shape[3]), dtype=np.uint8)
         finalFrameArray = np.zeros((256, 256, 3, frameArray.shape[3]), dtype=np.uint8)
-        
+        strideAngles = np.zeros((frameArray.shape[3],3))
         # print(frameArray.shape[3])
 
         start = time.time()
         model = load_model(args.model).to(CPU).eval()
         end = time.time()
         print(end-start, "(s) to load Model")
+        sign = -1
 
 
         for i in range(frameArray.shape[3]):
@@ -183,7 +198,27 @@ def main():
             img = PIL.Image.fromarray(frameArray[:,:,:,i][..., ::-1])
             
             coords_img, coords_raw, img_scaled, skel3DArray[:,:,:,i] = infer_joints(model, img)
+
+
+            # Calculate step angle
+            vector1 = coords_img[8,:2] - coords_img[10,:2]
+            vecto2 = (0,-1)
+
+            rightStride = angleBetween(vector1, vecto2)*180/np.pi
+            # print(angleBetween(vector1, vecto2)*180/np.pi, "right")
+
+            vector1 = coords_img[11,:2] - coords_img[13,:2]
+            # vector1=(.5,0,0)
+            vecto2 = (0,-1)
+            leftStride = angleBetween(vector1, vecto2)*180/np.pi
+            # print(angleBetween(vector1, vecto2)*180/np.pi, "left")
+            strideAngles[i,0] = (i+1)/fps
+            strideAngles[i,1] = rightStride
+            strideAngles[i,2] = leftStride
+
             draw_skele_on_image(img_scaled, coords_img[:,:2])
+            # draw_evaluation_image(img_scaled, coords_img[:,:2], rightStride, leftStride)
+
             # img3d = PIL.Image.fromarray(skel3DArray[:,:,:,i])
             finalFrameArray[:,:,:,i] = np.array(img_scaled, dtype=np.uint8)
             # skel3DArray[:,:,:,i] = np.array(img3d, dtype=np.uint8)
@@ -193,6 +228,17 @@ def main():
         # plt.imsave()
         # plt.show()
         VideoFrames.FrametoVid(finalFrameArray, skel3DArray, fps, filename_noext)
+        plt.subplot(2,1,1)
+        plt.plot(strideAngles[:,0], strideAngles[:,1], color='red')
+        plt.ylim(0,15)
+
+        plt.subplot(2,1,2)
+        plt.plot(strideAngles[:,0], strideAngles[:,2], color='blue')
+        plt.ylim(0,15)
+
+        plt.show()
+
+        # print(strideAngles)
 
 
 
@@ -267,6 +313,32 @@ def draw_color_joints(img, coords):
     draw.text((coords[11,0], coords[11,1]), 'LH', fill=left, font=font)
     draw.text((coords[12,0], coords[12,1]), 'LK', fill=left, font=font)
     draw.text((coords[13,0], coords[13,1]), 'LA', fill=left, font=font)
+
+
+def draw_evaluation_image(img, coords, Rangles, Langle):
+    # print(coords.shape[0])
+    r = 2
+    linewidth = 2
+    draw = PIL.ImageDraw.Draw(img)
+    right = (251, 18, 34)  
+    left = (0, 0, 255)
+    font = ImageFont.truetype('./fonts/Roboto-Bold.ttf', size=10)
+
+
+    # draw right leg
+    draw.ellipse((coords[8,0]-r, coords[8,1]-r, coords[8,0]+r, coords[8,1]+r), fill='white', outline='gray')
+    draw.ellipse((coords[10,0]-r, coords[10,1]-r, coords[10,0]+r, coords[10,1]+r), fill='white', outline='gray')
+    draw.line((coords[8,0], coords[8,1], coords[10,0], coords[10,1]), fill='red', width=linewidth)
+    draw.text((coords[10,0], coords[10,1] + 70), '{0:.2f}'.format(Rangles), fill=right, font=font)
+
+    # draw left joints
+    draw.ellipse((coords[11,0]-r, coords[11,1]-r, coords[11,0]+r, coords[11,1]+r), fill='white', outline='gray')
+    draw.ellipse((coords[13,0]-r, coords[13,1]-r, coords[13,0]+r, coords[11,1]+r), fill='white', outline='gray')
+    draw.line((coords[11,0], coords[11,1], coords[13,0], coords[13,1]), fill='blue', width=linewidth)
+    draw.text((coords[13,0], coords[13,1] - 100), '{0:.2f}'.format(Langle), fill=left, font=font)
+
+
+   
 
 def output_to_JSON(coords, filename):
     # create JSON file with all the joints saved
