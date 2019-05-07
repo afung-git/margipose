@@ -24,8 +24,3 @@ __pycache__/
 
 # Models
 /pretrained/
-/models/margipose-mpi3d.pth
-
-/inputs/
-/outputs/
-/outputs/3d/

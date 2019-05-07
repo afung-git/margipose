@@ -113,9 +113,9 @@ def main():
         img_skele3d = PIL.Image.fromarray(img_skele3d)
         
 
-        # draw_skele_on_image(img_input, coords_img[:,:2])
+        draw_skele_on_image(img_input, coords_img[:,:2])
         # Used for qualitative evaluation
-        draw_color_joints(img_input, coords_img[:,:2])
+        # draw_color_joints(img_input, coords_img[:,:2])
 
 
         joints_loc = output_to_JSON(coords_raw, filename_noext)
@@ -126,7 +126,7 @@ def main():
         #with open('./outputs/joint_loc.json', 'w') as fp:
         #    json.dump(joints_loc, fp, indent=4)
         MayaExporter.WriteToMayaAscii('./outputs/3d/' + filename_noext + '.ma', joints_loc)
-
+        MayaExporter.WriteAtomFile('./outputs/3d/' + filename_noext + '_anim.atom', 'C:/Users/imagi/Documents/maya/projects/default/scenes/sk_mannikin_margipose.0007.ma', 1, 1, (coords_raw*100)) 
 
 
     if(args.mode =='D' or args.mode == 'd'):
@@ -141,13 +141,13 @@ def main():
         for image in files:
             start = time.time()
             filename_noext = os.path.splitext(image)[0]
-            coords_img, coords_raw, img_input, img_skele3d = infer_joints(model, args.path)
+            coords_img, coords_raw, img_input, img_skele3d = infer_joints(model, args.path+image)
             # print(filename_noext)
             img_skele3d = PIL.Image.fromarray(img_skele3d)
                     
-            # draw_skele_on_image(img_input, coords_img[:,:2])
+            draw_skele_on_image(img_input, coords_img[:,:2])
             # Used for qualitative evaluation
-            draw_color_joints(img_input, coords_img[:,:2])
+            # draw_color_joints(img_input, coords_img[:,:2])
 
             joints_loc = output_to_JSON(coords_raw, filename_noext)   
 
@@ -156,8 +156,8 @@ def main():
             joints_loc_list.append(joints_loc)
             count += 1
             print(time.time()-start, "(s)", "completed " + str(count) + "/" + str(len(files)))
-
-        MayaExporter.WriteToMayaAscii('./outputs/3d/' + filename_noext + '.ma', joints_loc)
+            MayaExporter.WriteToMayaAscii('./outputs/3d/' + filename_noext + '.ma', joints_loc)
+            MayaExporter.WriteAtomFile('./outputs/3d/' + filename_noext + '_anim.atom', 'C:/Users/imagi/Documents/maya/projects/default/scenes/sk_mannikin_margipose.0007.ma', 1, 1, (coords_raw*100)) 
 
     if(args.mode =='V' or args.mode == 'v'):
         filename = os.path.basename(args.path)

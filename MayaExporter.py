@@ -45,28 +45,37 @@ class MayaExporter:
     def WriteAtomFile(filepath, sceneFilePath, startTime, endTime, joint_data):
         fileText = MayaExporter.WriteAtomHeader(sceneFilePath, startTime, endTime)
 
-        baseSkeleton = MayaExporter.GetFlattenedBaseSkeleton()
+        #baseSkeleton = MayaExporter.GetFlattenedBaseSkeleton()
         frameSkeleton = MayaExporter.GetFlattenedJoints(joint_data)
 
         frame = 1
 
         for joint in frameSkeleton.keys():
-            rotation = (0,0,0)
-            frameJoint = frameSkeleton[joint]
-            baseJoint =  baseSkeleton[joint]
-            translation = (frameJoint['t'][0], frameJoint['t'][1], frameJoint['t'][2]);
-
             isIkHandle = False
 
             #if joint == 'r_elbow' or joint == 'r_wrist' or joint == 'l_elbow' or joint == 'l_wrist' or joint == 'r_knee' or joint == 'r_ankle' or joint == 'l_knee' or joint == 'l_ankle':
+            if joint == 'r_wrist'or joint == 'l_wrist' or joint == 'r_ankle' or joint == 'l_ankle':
+                isIkHandle = True
+            #if joint == 'r_ankle':
             #    isIkHandle = True
 
-            fileText += MayaExporter.WriteAtomNode(joint, frameJoint['depth'], frameJoint['children'], frame, isIkHandle, translation)
+            frameJoint = frameSkeleton[joint]
+            #baseJoint =  baseSkeleton[joint]
+
+            translation = (frameJoint['t'][0], frameJoint['t'][1], frameJoint['t'][2]);
+
+            #if isIkHandle:
+            #    translation = frameJoint['abs']
+            #else:
+            #    translation = frameJoint['t']
+
+            if isIkHandle:
+                fileText += MayaExporter.WriteAtomNode(joint, frameJoint['depth'], frameJoint['children'], frame, isIkHandle, translation)
 
         fileOut = open(filepath, "w")
         fileOut.write(fileText)
         fileOut.close()
-        print("Atom File " + filepath + " written.")
+        print("ATOM File written: " + filepath)
 
         return None
 
@@ -75,8 +84,8 @@ class MayaExporter:
         headerText = ""
         headerText += "atomVersion 1.0;\n"
         headerText += "mayaVersion 2019;\n"
-        #headerText += "mayaSceneFile " + sceneFilePath + ";\n"
-        headerText += "mayaSceneFile C:/Users/imagi/Documents/maya/projects/default/scenes/sk_mannikin_margipose.0006.ma;\n"
+        headerText += "mayaSceneFile " + sceneFilePath + ";\n"
+        #headerText += "mayaSceneFile C:/Users/imagi/Documents/maya/projects/default/scenes/sk_mannikin_margipose.0006.ma;\n"
         headerText += "timeUnit ntsc;\n"
         headerText += "linearUnit cm;\n"
         headerText += "angularUnit deg;\n"
@@ -108,7 +117,7 @@ class MayaExporter:
         prefix = ""
 
         if isIkHandle:
-            nodeText += "  ikHandle_" + joint_name + " 2 0;\n"
+            nodeText += "  ikHandle_" + joint_name + " 1 0;\n"
         else:
             nodeText += "  " + joint_name + " " + str(depth) + " " + str(numChildren) + ";\n"
 
@@ -253,91 +262,109 @@ class MayaExporter:
         joints_loc = {
             "root" : {
                 "t": (0,0,0),
+                "abs" : (0,0,0),
                 "depth" : 2,
                 "children" : 1
             },
             "pelvis" : {
                 "t": coords[14],
+                "abs" : coords[14],
                 "depth" : 3,
                 "children" : 3
             },
             "r_hip" : {
                 "t": coords[8] - coords[14],
+                "abs" : coords[8],
                 "depth" : 4,
                 "children" : 1
             },
             "r_knee" : {
                 "t": coords[9] - coords[8],
+                "abs" : coords[9],
                 "depth" : 5,
                 "children" : 1
             },
             "r_ankle" : {
-                "t":coords[10] - coords[9],
+                "t": coords[10] - coords[9],
+                "abs" : coords[10],
                 "depth" : 6,
                 "children" : 0
             },
             "l_hip" : {
                 "t": coords[11] - coords[14],
+                "abs" : coords[11],
                 "depth" : 4,
                 "children" : 1
             },
             "l_knee" : {
-                "t": coords[12] - coords[11],
+                "t": coords[10] - coords[11],
+                "abs" : coords[10],
                 "depth" : 5,
                 "children" : 1
             },
             "l_ankle" : {
                 "t": coords[13] - coords[12],
+                "abs" : coords[13],
                 "depth" : 6,
                 "children" : 0
             },
             "spine_02" : {
                 "t": coords[15] - coords[14],
+                "abs" : coords[15],
                 "depth" : 4,
                 "children" : 1
             },
             "neck": {
                 "t": coords[1] - coords[15],
+                "abs" : coords[1],
                 "depth" : 5,
                 "children" : 3
             },
             "head" : {
                 "t": coords[16] - coords[1],
+                "abs" : coords[16],
                 "depth" : 6,
                 "children" : 1
             },
             "head_top":{
                 "t": coords[0] - coords[16],
+                "abs" : coords[0],
                 "depth" : 7,
                 "children" : 0
             },
             "r_shoulder" : {
-                "t": coords[2] - coords[1],
+                "t": coords[0] - coords[1],
+                "abs" : coords[0],
                 "depth" : 6,
                 "children" : 1
             },
             "r_elbow" : {
                 "t": coords[3] - coords[2],
+                "abs" : coords[3],
                 "depth" : 7,
                 "children" : 1
             },
             "r_wrist" : {
                 "t": coords[4] - coords[3],
+                "abs" : coords[4],
                 "depth" : 8,
                 "children" : 0
             },
             "l_shoulder" : {
                 "t": coords[5] - coords[1],
+                "abs" : coords[5],
                 "depth" : 6,
                 "children" : 1
             },
             "l_elbow" : {
                 "t": coords[6] - coords[5],
+                "abs" : coords[6],
                 "depth" : 7,
                 "children" : 1
             },
             "l_wrist" : {
                 "t": coords[7] - coords[6],
+                "abs" : coords[7],
                 "depth" : 8,
                 "children" : 0
             },
