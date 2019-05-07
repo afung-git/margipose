@@ -1,0 +1,152 @@
+atomVersion 1.0;
+mayaVersion 2019;
+mayaSceneFile C:/Users/imagi/Documents/maya/projects/default/scenes/sk_mannikin_margipose.0007.ma;
+timeUnit ntsc;
+linearUnit cm;
+angularUnit deg;
+startTime 1;
+endTime 1;
+dagNode {
+  ikHandle_r_ankle 1 0;
+  anim translate.translateX translateX 0;
+  animData {
+    input time;
+    output linear;
+    weighted 0;
+    preInfinity constant;
+    postInfinity constant;
+    keys {
+      1 7.975944504141808 fixed fixed 1 0 0 0 1 0 1;
+    }
+  }
+  anim translate.translateY translateY 1;
+  animData {
+    input time;
+    output linear;
+    weighted 0;
+    preInfinity constant;
+    postInfinity constant;
+    keys {
+      1 35.04713475704193 fixed fixed 1 0 0 0 1 0 1;
+    }
+  }
+  anim translate.translateZ translateZ 2;
+  animData {
+    input time;
+    output linear;
+    weighted 0;
+    preInfinity constant;
+    postInfinity constant;
+    keys {
+      1 19.56559792160988 fixed fixed 1 0 0 0 1 0 1;
+    }
+  }
+}
+dagNode {
+  ikHandle_l_ankle 1 0;
+  anim translate.translateX translateX 0;
+  animData {
+    input time;
+    output linear;
+    weighted 0;
+    preInfinity constant;
+    postInfinity constant;
+    keys {
+      1 -3.5276858136057854 fixed fixed 1 0 0 0 1 0 1;
+    }
+  }
+  anim translate.translateY translateY 1;
+  animData {
+    input time;
+    output linear;
+    weighted 0;
+    preInfinity constant;
+    postInfinity constant;
+    keys {
+      1 19.14982795715332 fixed fixed 1 0 0 0 1 0 1;
+    }
+  }
+  anim translate.translateZ translateZ 2;
+  animData {
+    input time;
+    output linear;
+    weighted 0;
+    preInfinity constant;
+    postInfinity constant;
+    keys {
+      1 24.486225843429565 fixed fixed 1 0 0 0 1 0 1;
+    }
+  }
+}
+dagNode {
+  ikHandle_r_wrist 1 0;
+  anim translate.translateX translateX 0;
+  animData {
+    input time;
+    output linear;
+    weighted 0;
+    preInfinity constant;
+    postInfinity constant;
+    keys {
+      1 7.749032974243164 fixed fixed 1 0 0 0 1 0 1;
+    }
+  }
+  anim translate.translateY translateY 1;
+  animData {
+    input time;
+    output linear;
+    weighted 0;
+    preInfinity constant;
+    postInfinity constant;
+    keys {
+      1 6.450861692428589 fixed fixed 1 0 0 0 1 0 1;
+    }
+  }
+  anim translate.translateZ translateZ 2;
+  animData {
+    input time;
+    output linear;
+    weighted 0;
+    preInfinity constant;
+    postInfinity constant;
+    keys {
+      1 -14.897222816944122 fixed fixed 1 0 0 0 1 0 1;
+    }
+  }
+}
+dagNode {
+  ikHandle_l_wrist 1 0;
+  anim translate.translateX translateX 0;
+  animData {
+    input time;
+    output linear;
+    weighted 0;
+    preInfinity constant;
+    postInfinity constant;
+    keys {
+      1 -17.70200878381729 fixed fixed 1 0 0 0 1 0 1;
+    }
+  }
+  anim translate.translateY translateY 1;
+  animData {
+    input time;
+    output linear;
+    weighted 0;
+    preInfinity constant;
+    postInfinity constant;
+    keys {
+      1 10.36858856678009 fixed fixed 1 0 0 0 1 0 1;
+    }
+  }
+  anim translate.translateZ translateZ 2;
+  animData {
+    input time;
+    output linear;
+    weighted 0;
+    preInfinity constant;
+    postInfinity constant;
+    keys {
+      1 -22.013376653194427 fixed fixed 1 0 0 0 1 0 1;
+    }
+  }
+}

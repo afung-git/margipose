@@ -16,7 +16,7 @@ dagNode {
     preInfinity constant;
     postInfinity constant;
     keys {
-      1 19.664188474416733 fixed fixed 1 0 0 0 1 0 1;
+      1 17.60159432888031 fixed fixed 1 0 0 0 1 0 1;
     }
   }
   anim translate.translateY translateY 1;
@@ -27,7 +27,7 @@ dagNode {
     preInfinity constant;
     postInfinity constant;
     keys {
-      1 12.452489137649536 fixed fixed 1 0 0 0 1 0 1;
+      1 8.846408128738403 fixed fixed 1 0 0 0 1 0 1;
     }
   }
   anim translate.translateZ translateZ 2;
@@ -38,7 +38,7 @@ dagNode {
     preInfinity constant;
     postInfinity constant;
     keys {
-      1 96.95796966552734 fixed fixed 1 0 0 0 1 0 1;
+      1 61.89660727977753 fixed fixed 1 0 0 0 1 0 1;
     }
   }
 }
@@ -52,7 +52,7 @@ dagNode {
     preInfinity constant;
     postInfinity constant;
     keys {
-      1 -30.691754817962646 fixed fixed 1 0 0 0 1 0 1;
+      1 -34.631578624248505 fixed fixed 1 0 0 0 1 0 1;
     }
   }
   anim translate.translateY translateY 1;
@@ -63,7 +63,7 @@ dagNode {
     preInfinity constant;
     postInfinity constant;
     keys {
-      1 39.1217440366745 fixed fixed 1 0 0 0 1 0 1;
+      1 43.317022919654846 fixed fixed 1 0 0 0 1 0 1;
     }
   }
   anim translate.translateZ translateZ 2;
@@ -74,7 +74,7 @@ dagNode {
     preInfinity constant;
     postInfinity constant;
     keys {
-      1 30.45802041888237 fixed fixed 1 0 0 0 1 0 1;
+      1 71.54487669467926 fixed fixed 1 0 0 0 1 0 1;
     }
   }
 }
@@ -88,7 +88,7 @@ dagNode {
     preInfinity constant;
     postInfinity constant;
     keys {
-      1 -15.416371822357178 fixed fixed 1 0 0 0 1 0 1;
+      1 -19.927704334259033 fixed fixed 1 0 0 0 1 0 1;
     }
   }
   anim translate.translateY translateY 1;
@@ -99,7 +99,7 @@ dagNode {
     preInfinity constant;
     postInfinity constant;
     keys {
-      1 2.068418264389038 fixed fixed 1 0 0 0 1 0 1;
+      1 1.4904201030731201 fixed fixed 1 0 0 0 1 0 1;
     }
   }
   anim translate.translateZ translateZ 2;
@@ -110,7 +110,7 @@ dagNode {
     preInfinity constant;
     postInfinity constant;
     keys {
-      1 6.554558873176575 fixed fixed 1 0 0 0 1 0 1;
+      1 -26.979458332061768 fixed fixed 1 0 0 0 1 0 1;
     }
   }
 }
@@ -124,7 +124,7 @@ dagNode {
     preInfinity constant;
     postInfinity constant;
     keys {
-      1 31.994372606277466 fixed fixed 1 0 0 0 1 0 1;
+      1 29.029935598373413 fixed fixed 1 0 0 0 1 0 1;
     }
   }
   anim translate.translateY translateY 1;
@@ -135,7 +135,7 @@ dagNode {
     preInfinity constant;
     postInfinity constant;
     keys {
-      1 4.761633276939392 fixed fixed 1 0 0 0 1 0 1;
+      1 4.5751869678497314 fixed fixed 1 0 0 0 1 0 1;
     }
   }
   anim translate.translateZ translateZ 2;
@@ -146,7 +146,7 @@ dagNode {
     preInfinity constant;
     postInfinity constant;
     keys {
-      1 -19.971363246440887 fixed fixed 1 0 0 0 1 0 1;
+      1 14.06367663294077 fixed fixed 1 0 0 0 1 0 1;
     }
   }
 }
