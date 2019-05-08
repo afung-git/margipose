@@ -230,12 +230,22 @@ def main():
         VideoFrames.FrametoVid(finalFrameArray, skel3DArray, fps, filename_noext)
         plt.subplot(2,1,1)
         plt.plot(strideAngles[:,0], strideAngles[:,1], color='red')
-        plt.ylim(0,15)
+        plt.title('Right Leg')
+        plt.ylim(0,30)
+        plt.ylabel('Rect Swing Angle (deg)')
+        plt.xlim(0,6)
+        plt.xlabel('(s)')
+
 
         plt.subplot(2,1,2)
         plt.plot(strideAngles[:,0], strideAngles[:,2], color='blue')
-        plt.ylim(0,15)
+        plt.title('Left Leg')
+        plt.ylim(0,30)
+        plt.ylabel('Rect Swing Angle (deg)')
+        plt.xlim(0,6)
+        plt.xlabel('(s)')
 
+        plt.tight_layout()
         plt.show()
 
         # print(strideAngles)
