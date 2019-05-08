@@ -109,7 +109,7 @@ or for a dir of inputs
 
 Video Inference:
 ```bash
-./infer.py --model pretrained/margipose-mpi3d.pth --mode v --path inputs/vides/000001.mp4
+./infer.py --model pretrained/margipose-mpi3d.pth --mode v --path inputs/videos/000001.mp4
 ```
 
 Run the project unit tests:
