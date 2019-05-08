@@ -14,10 +14,6 @@ Install Dependecies
 
 You only need to prepare the datasets that you are interested in using.
 
-NOTE: Currently `docker-compose.yml` contains example volume mounts for the datasets.
-You will need to edit the entries for datasets that you have prepared, and remove
-the others.
-
 #### Human3.6M
 
 1. Use the scripts available at https://github.com/anibali/h36m-fetch to download
@@ -50,25 +46,6 @@ the others.
    >>> from torchdata import mpii
    >>> mpii.install_mpii_dataset('/datasets/mpii')
    ```
-
-### [Optional] Configure and run Showoff
-
-Showoff is a display server which allows you to visualise model training progression.
-The following steps guide you through starting a Showoff server and configuring
-MargiPose to use it.
-
-1. Change `POSTGRES_PASSWORD` in `showoff/postgres.env`. Using a randomly generated password is
-   recommended.
-2. Change `COOKIE_SECRET` in `showoff/showoff.env`. Once again, using a randomly generated
-   value is recommended.
-3. From a terminal in the showoff directory, run `docker-compose up -d showoff`. This will
-   start the Showoff server.
-4. Open [localhost:13000](http://localhost:13000) in your web browser.
-5. Log in using the username "admin" and the password "password".
-6. Change the admin password.
-7. Open up `showoff/showoff-client.env` in a text editor.
-8. From the Showoff account page, add a new API key. Copy the API key ID and secret key
-   into `showoff-client.env` (you will need to uncomment the appropriate lines).
 
 ## Running scripts
 
