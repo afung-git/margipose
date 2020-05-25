@@ -6,7 +6,7 @@ scipy
 torch==1.0.0
 torchvision==0.2.1
 pretrainedmodels==0.6.0
-matplotlib==2.2.3
+matplotlib==2.2.5
 h5py==2.8.0
 importlib_resources==0.4.0
 semantic_version==2.6.0
